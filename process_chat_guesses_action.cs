@@ -5,8 +5,11 @@ public class CPHInline
     public bool Execute()
     {
         // 1. Grab chat message and user data
-        string chatMessage = args.ContainsKey("message") ? args["message"].ToString().Trim().ToUpper() : "";
-        string chatUser = args.ContainsKey("userName") ? args["userName"].ToString() : "Someone";
+        CPH.TryGetArg("message", out string msgArg);
+        string chatMessage = string.IsNullOrEmpty(msgArg) ? "" : msgArg.Trim().ToUpper();
+
+        CPH.TryGetArg("userName", out string userArg);
+        string chatUser = string.IsNullOrEmpty(userArg) ? "Someone" : userArg;
         
         // 2. Get the current active secret word
         string secretWord = CPH.GetGlobalVar<string>("secretWord");
@@ -30,7 +33,7 @@ public class CPHInline
             string jsonPayload = $"{{\"event\":\"winner\",\"user\":\"{chatUser}\",\"word\":\"{secretWord}\",\"points\":{pointsAwarded}}}";
             
             // Broadcast via Streamer.bot WebSocket Server
-            CPH.WebsocketBroadcastJson(jsonPayload);
+            CPH.WebsocketBroadcastString(jsonPayload);
         }
         
         return true;

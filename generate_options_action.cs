@@ -6,7 +6,8 @@ public class CPHInline
     public bool Execute()
     {
         // 1. Get the guest's username from your command (e.g., !giveword guestname)
-        string guestUser = args.ContainsKey("rawInput") ? args["rawInput"].ToString().Trim().Replace("@", "").ToLower() : "";
+        CPH.TryGetArg("rawInput", out string rawInput);
+        string guestUser = string.IsNullOrEmpty(rawInput) ? "" : rawInput.Trim().Replace("@", "").ToLower();
         
         if (string.IsNullOrEmpty(guestUser)) {
             CPH.SendMessage("Please specify a guest: !giveword username");

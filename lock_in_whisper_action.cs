@@ -5,14 +5,17 @@ public class CPHInline
     public bool Execute()
     {
         // 1. Check who sent the whisper and what they said
-        string whisperSender = args.ContainsKey("user") ? args["user"].ToString().ToLower() : "";
-        string message = args.ContainsKey("message") ? args["message"].ToString().Trim().ToUpper() : "";
+        CPH.TryGetArg("user", out string userArg);
+        string whisperSender = string.IsNullOrEmpty(userArg) ? "" : userArg.ToLower();
+
+        CPH.TryGetArg("message", out string msgArg);
+        string message = string.IsNullOrEmpty(msgArg) ? "" : msgArg.Trim().ToUpper();
         
         // 2. Check who our current guest is supposed to be
         string currentGuest = CPH.GetGlobalVar<string>("currentGuest");
 
         // If no game is pending, or someone else whispered the bot, ignore it
-        if (currentGuest == null || whisperSender != currentGuest.ToLower()) return true;
+        if (string.IsNullOrEmpty(currentGuest) || whisperSender != currentGuest.ToLower()) return true;
 
         string lockedWord = "";
 

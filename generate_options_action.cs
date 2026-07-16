@@ -3,6 +3,8 @@ using System.Net.Http;
 
 public class CPHInline
 {
+    private static readonly HttpClient _httpClient = new HttpClient();
+
     public bool Execute()
     {
         // 1. Get the guest's username from your command (e.g., !giveword guestname)
@@ -16,12 +18,10 @@ public class CPHInline
 
         try 
         {
-            using (HttpClient client = new HttpClient())
-            {
-                // 2. Fetch 3 random words from a free API
-                string response = client.GetStringAsync("https://random-word-api.herokuapp.com/word?number=3").Result;
-                
-                // Clean up the JSON array formatting
+            // 2. Fetch 3 random words from a free API
+            string response = _httpClient.GetStringAsync("https://random-word-api.herokuapp.com/word?number=3").GetAwaiter().GetResult();
+
+            // Clean up the JSON array formatting
                 response = response.Replace("[", "").Replace("]", "").Replace("\"", "");
                 string[] words = response.Split(',');
 
@@ -42,7 +42,6 @@ public class CPHInline
                     // 5. Let chat know we are waiting
                     CPH.SendMessage($"Sent 3 secret options to @{guestUser}. Waiting for them to lock in their choice...");
                 }
-            }
         }
         catch (Exception ex) 
         {

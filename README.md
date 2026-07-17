@@ -43,7 +43,7 @@ You will need to create three separate Actions in Streamer.bot.
 #### **Action 2: Lock In Whisper**
 
 * **Name:** ProcessWhisper
-* **Trigger:** Twitch -> Chat -> Whisper.
+* **Trigger:** Twitch -> Chat -> Bot Whispers.
 * **Sub-Action:** Core -> C# -> Execute C# Code.
 * **Code:** Paste the contents of lock_in_whisper_action.cs.
 

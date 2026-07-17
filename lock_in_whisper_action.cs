@@ -5,7 +5,7 @@ public class CPHInline
     public bool Execute()
     {
         // 1. Check who sent the whisper and what they said
-        CPH.TryGetArg("user", out string userArg);
+        CPH.TryGetArg("userName", out string userArg);
         string whisperSender = string.IsNullOrEmpty(userArg) ? "" : userArg.ToLower();
 
         CPH.TryGetArg("message", out string msgArg);

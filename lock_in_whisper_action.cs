@@ -11,7 +11,7 @@ public class CPHInline
         CPH.TryGetArg("message", out string msgArg);
         string message = string.IsNullOrEmpty(msgArg) ? "" : msgArg.Trim().ToUpper();
         
-        // 2. Check who our current guest is supposed to be
+        // 2. Check who our current Goose is supposed to be
         string currentGuest = CPH.GetGlobalVar<string>("guessing-game_currentGuest");
 
         // If no game is pending, or someone else whispered the bot, ignore it
@@ -32,13 +32,16 @@ public class CPHInline
         // 4. Lock the final word into the variable for chat to guess!
         CPH.SetGlobalVar("guessing-game_secretWord", lockedWord, true);
         
-        // 5. Clear the guest variable so they can't change it
-        CPH.SetGlobalVar("guessing-game_currentGuest", "", true);
+        // 5. Update state and broadcast
+        CPH.SetGlobalVar("guessing-game_state", "active", true);
 
-        // 6. Confirm with the guest & announce to stream
+        // 6. Confirm with the Goose & announce to stream
         CPH.SendWhisper(whisperSender, $"Locked in! Your word is: {lockedWord}. Start creating!", true);
-        CPH.SendMessage($"The secret word is locked! The game has started. First person to guess it in chat wins!");
+        CPH.SendMessage($"The secret word is locked! The game has started. First duck to guess it in chat wins!");
         
+        string jsonPayload = "{\"event\":\"state_change\",\"state\":\"active\"}";
+        CPH.WebsocketBroadcastString(jsonPayload);
+
         return true;
     }
 }

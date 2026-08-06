@@ -1,28 +1,23 @@
 using System;
-using System.Net.Http;
+using System.IO;
 
 public class CPHInline
 {
-    private static readonly HttpClient _httpClient = new HttpClient();
-
     public bool Execute()
     {
-        // 1. Get the guest's username from your command (e.g., !giveword guestname)
+        // 1. Get the Goose's username from your command (e.g., !giveword goosename)
         CPH.TryGetArg("rawInput", out string rawInput);
         string guestUser = string.IsNullOrEmpty(rawInput) ? "" : rawInput.Trim().Replace("@", "").ToLower();
         
         if (string.IsNullOrEmpty(guestUser)) {
-            CPH.SendMessage("Please specify a guest: !giveword username");
+            CPH.SendMessage("Please specify a Goose: !giveword username");
             return false;
         }
 
         try 
         {
-            // 2. Fetch curated Pictionary words from a raw text list
-            string response = _httpClient.GetStringAsync("https://raw.githubusercontent.com/engichang1467/word-pictionary-list/master/myWords.txt").GetAwaiter().GetResult();
-
-            // Split the response by newlines into an array and remove any empty entries
-            string[] allWords = response.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            // 2. Fetch words from the local words.txt file
+            string[] allWords = File.ReadAllLines("words.txt");
 
             if(allWords.Length >= 3)
             {
@@ -50,20 +45,25 @@ public class CPHInline
                     
                     CPH.SetGlobalVar("guessing-game_currentGuest", guestUser, true);
                     CPH.SetGlobalVar("guessing-game_secretWord", "", true); // Clear any old word out
+                    CPH.SetGlobalVar("guessing-game_state", "waiting", true); // Set game state to waiting
 
                     // 4. Send the whisper
-                    string message = $"Guessing Game! Reply to this whisper with A, B, or C.  A - {words[0]}   B - {words[1]}   C - {words[2]}";
+                    string message = $"Duck, Duck, Guess! Reply to this whisper with A, B, or C.  A - {words[0]}   B - {words[1]}   C - {words[2]}";
                     CPH.SendWhisper(guestUser, message, true);
                     
                     // 5. Let chat know we are waiting
-                    CPH.SendMessage($"Sent 3 secret options to @{guestUser}. Waiting for them to lock in their choice...");
+                    CPH.SendMessage($"Sent 3 secret options to our Goose @{guestUser}. Waiting for them to lock in their choice...");
+
+                    // 6. Broadcast state change to overlay
+                    string jsonPayload = "{\"event\":\"state_change\",\"state\":\"waiting\"}";
+                    CPH.WebsocketBroadcastString(jsonPayload);
                 }
             }
         }
         catch (Exception ex) 
         {
             CPH.LogInfo("Word Fetch Error: " + ex.Message);
-            CPH.SendMessage("Error fetching words. Check Streamer.bot logs.");
+            CPH.SendMessage("Error fetching words from words.txt.");
         }
         
         return true;

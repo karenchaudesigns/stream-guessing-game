@@ -38,21 +38,21 @@ You will need to create three separate Actions in Streamer.bot.
 * **Name:** GiveWordOptions
 * **Trigger:** Twitch -> Chat -> Command (Create a command like !giveword and restrict it to Broadcaster/Moderator).
 * **Sub-Action:** Core -> C# -> Execute C# Code.
-* **Code:** Paste the contents of generate_options_action.cs. *(Note: You must add System.dll in the references tab of the C# compiler).*
+* **Code:** Paste the contents of give_word_options.cs. *(Note: You must add System.dll in the references tab of the C# compiler).*
 
 #### **Action 2: Lock In Whisper**
 
 * **Name:** ProcessWhisper
 * **Trigger:** Twitch -> Chat -> Bot Whispers.
 * **Sub-Action:** Core -> C# -> Execute C# Code.
-* **Code:** Paste the contents of lock_in_whisper_action.cs.
+* **Code:** Paste the contents of process_whisper.cs.
 
 #### **Action 3: Process Chat Guesses**
 
 * **Name:** CheckChatGuess
 * **Trigger:** Twitch -> Chat -> Chat Message.
 * **Sub-Action:** Core -> C# -> Execute C# Code.
-* **Code:** Paste the contents of process_chat_guesses_action.cs.
+* **Code:** Paste the contents of check_chat_guess.cs.
 
 ## **How to Play Live**
 

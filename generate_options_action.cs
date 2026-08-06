@@ -44,15 +44,15 @@ public class CPHInline
                 if(words.Length >= 3) 
                 {
                     // 3. Save options globally. Capitalizing for visual clarity and comparison later.
-                    CPH.SetGlobalVar("guestOptions_A", words[0], true);
-                    CPH.SetGlobalVar("guestOptions_B", words[1], true);
-                    CPH.SetGlobalVar("guestOptions_C", words[2], true);
+                    CPH.SetGlobalVar("guessing-game_guestOptions_A", words[0], true);
+                    CPH.SetGlobalVar("guessing-game_guestOptions_B", words[1], true);
+                    CPH.SetGlobalVar("guessing-game_guestOptions_C", words[2], true);
                     
-                    CPH.SetGlobalVar("currentGuest", guestUser, true);
-                    CPH.SetGlobalVar("secretWord", "", true); // Clear any old word out
+                    CPH.SetGlobalVar("guessing-game_currentGuest", guestUser, true);
+                    CPH.SetGlobalVar("guessing-game_secretWord", "", true); // Clear any old word out
 
                     // 4. Send the whisper
-                    string message = $"Guessing Game! Reply to this whisper with A, B, or C.  A) {words[0]}   B) {words[1]}   C) {words[2]}";
+                    string message = $"Guessing Game! Reply to this whisper with A, B, or C.  A - {words[0]}   B - {words[1]}   C - {words[2]}";
                     CPH.SendWhisper(guestUser, message, true);
                     
                     // 5. Let chat know we are waiting

@@ -12,7 +12,7 @@ public class CPHInline
         string chatUser = string.IsNullOrEmpty(userArg) ? "Someone" : userArg;
         
         // 2. Get the current active secret word
-        string secretWord = CPH.GetGlobalVar<string>("secretWord");
+        string secretWord = CPH.GetGlobalVar<string>("guessing-game_secretWord");
 
         // If the game isn't active (word is empty or null), do nothing
         if (string.IsNullOrEmpty(secretWord)) return true;
@@ -23,7 +23,7 @@ public class CPHInline
             // WE HAVE A WINNER!
             
             // Immediately clear the word so nobody else wins this round
-            CPH.SetGlobalVar("secretWord", "", true); 
+            CPH.SetGlobalVar("guessing-game_secretWord", "", true);
 
             // Send success message to chat
             CPH.SendMessage($"🏆 @{chatUser} GOT IT! The word was {secretWord}! 🏆");

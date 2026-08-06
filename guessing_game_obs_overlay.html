@@ -57,11 +57,19 @@
     <!-- Confetti Layer -->
     <canvas id="confetti"></canvas>
 
-    <!-- Top Area: Winner Announcement -->
+    <!-- Top Left Area: Game State Banner -->
+    <div class="absolute top-10 left-10 z-20">
+        <div id="game-state-banner" class="bg-gray-900/90 backdrop-blur-md border border-gray-700 p-4 rounded-xl shadow-lg flex items-center gap-3 transition-colors duration-500">
+            <div id="game-state-indicator" class="w-3 h-3 rounded-full bg-gray-500 animate-pulse"></div>
+            <h2 id="game-state-text" class="text-xl font-bold uppercase tracking-wide text-gray-300">No Game Active</h2>
+        </div>
+    </div>
+
+    <!-- Top Area: Winner/Give Up Announcement -->
     <div class="w-full flex justify-center mt-10 absolute top-10 left-0 z-20">
         <div id="winner-popup" class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl p-1 shadow-[0_0_40px_rgba(124,58,237,0.5)] flex flex-col items-center">
-            <div class="bg-gray-900 rounded-[22px] px-12 py-8 flex flex-col items-center border border-white/10">
-                <h2 class="text-2xl text-purple-400 font-bold tracking-widest uppercase mb-1">We Have A Winner!</h2>
+            <div id="popup-inner" class="bg-gray-900 rounded-[22px] px-12 py-8 flex flex-col items-center border border-white/10">
+                <h2 id="popup-title" class="text-2xl text-purple-400 font-bold tracking-widest uppercase mb-1">We Have A Winner!</h2>
                 <h1 id="winner-name" class="text-5xl font-black text-white mb-4">Username</h1>
                 <div class="bg-white/10 px-6 py-3 rounded-xl border border-white/20">
                     <span class="text-gray-300 text-lg">The word was: </span>
@@ -91,9 +99,15 @@
 
         function handleWinner(username, word, points) {
             document.getElementById('winner-name').innerText = username;
+            document.getElementById('winner-name').style.display = 'block';
             document.getElementById('winner-word').innerText = word;
             
             const popup = document.getElementById('winner-popup');
+            popup.className = "bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl p-1 shadow-[0_0_40px_rgba(124,58,237,0.5)] flex flex-col items-center";
+
+            document.getElementById('popup-title').innerText = "We Have A Winner!";
+            document.getElementById('popup-title').className = "text-2xl text-purple-400 font-bold tracking-widest uppercase mb-1";
+
             popup.classList.add('show');
             fireConfetti();
 
@@ -104,6 +118,46 @@
             setTimeout(() => {
                 popup.classList.remove('show');
             }, 8000);
+        }
+
+        function handleGiveUp(word) {
+            document.getElementById('winner-name').style.display = 'none';
+            document.getElementById('winner-word').innerText = word;
+
+            const popup = document.getElementById('winner-popup');
+            popup.className = "bg-gradient-to-r from-red-600 to-orange-600 rounded-3xl p-1 shadow-[0_0_40px_rgba(220,38,38,0.5)] flex flex-col items-center";
+
+            document.getElementById('popup-title').innerText = "Goose Gave Up!";
+            document.getElementById('popup-title').className = "text-2xl text-red-400 font-bold tracking-widest uppercase mb-1";
+
+            popup.classList.add('show');
+
+            setTimeout(() => {
+                popup.classList.remove('show');
+            }, 8000);
+        }
+
+        function handleStateChange(state) {
+            const banner = document.getElementById('game-state-banner');
+            const indicator = document.getElementById('game-state-indicator');
+            const text = document.getElementById('game-state-text');
+
+            if (state === 'waiting') {
+                indicator.className = "w-3 h-3 rounded-full bg-yellow-400 animate-pulse shadow-[0_0_10px_rgba(250,204,21,0.8)]";
+                text.innerText = "Waiting for Goose...";
+                text.className = "text-xl font-bold uppercase tracking-wide text-yellow-400";
+                banner.className = "bg-gray-900/90 backdrop-blur-md border border-yellow-700/50 p-4 rounded-xl shadow-lg flex items-center gap-3 transition-colors duration-500";
+            } else if (state === 'active') {
+                indicator.className = "w-3 h-3 rounded-full bg-green-400 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.8)]";
+                text.innerText = "Game Active - Guess the Word!";
+                text.className = "text-xl font-bold uppercase tracking-wide text-green-400";
+                banner.className = "bg-gray-900/90 backdrop-blur-md border border-green-700/50 p-4 rounded-xl shadow-lg flex items-center gap-3 transition-colors duration-500";
+            } else {
+                indicator.className = "w-3 h-3 rounded-full bg-gray-500";
+                text.innerText = "No Game Active";
+                text.className = "text-xl font-bold uppercase tracking-wide text-gray-400";
+                banner.className = "bg-gray-900/90 backdrop-blur-md border border-gray-700 p-4 rounded-xl shadow-lg flex items-center gap-3 transition-colors duration-500";
+            }
         }
 
         function renderLeaderboard() {
@@ -155,6 +209,10 @@
                         const data = JSON.parse(event.data);
                         if(data.event === "winner") {
                             handleWinner(data.user, data.word, data.points || 10);
+                        } else if (data.event === "give_up") {
+                            handleGiveUp(data.word);
+                        } else if (data.event === "state_change") {
+                            handleStateChange(data.state);
                         }
                     } catch(e) { console.error("Error parsing WS message", e); }
                 };

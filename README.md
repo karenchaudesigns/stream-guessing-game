@@ -37,7 +37,11 @@ You will need to create three separate Actions in Streamer.bot.
 
 * **Name:** GiveWordOptions
 * **Trigger:** Twitch -> Chat -> Command (Create a command like !giveword and restrict it to Broadcaster/Moderator).
-* **Sub-Action:** Core -> C# -> Execute C# Code.
+* **Sub-Action 1 (Optional):** Core -> Arguments -> Set Argument.
+  * **Variable Name:** `wordsFilePath`
+  * **Value:** The absolute path to your `words.txt` file (e.g., `C:\Streamer.bot\words.txt`).
+  * *Note: If this argument is not set, the bot will look for `words.txt` in the folder where Streamer.bot is running.*
+* **Sub-Action 2:** Core -> C# -> Execute C# Code.
 * **Code:** Paste the contents of give_word_options.cs. *(Note: You must add System.dll in the references tab of the C# compiler).*
 
 #### **Action 2: Lock In Whisper**

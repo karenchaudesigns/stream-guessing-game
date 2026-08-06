@@ -16,8 +16,19 @@ public class CPHInline
 
         try 
         {
-            // 2. Fetch words from the local words.txt file
-            string[] allWords = File.ReadAllLines("words.txt");
+            // 2. Fetch words from the configured or default words file
+            CPH.TryGetArg("wordsFilePath", out string wordsFilePath);
+            if (string.IsNullOrEmpty(wordsFilePath)) {
+                wordsFilePath = "words.txt";
+            }
+
+            if (!File.Exists(wordsFilePath)) {
+                CPH.LogInfo($"Word Fetch Error: File not found at {wordsFilePath}");
+                CPH.SendMessage($"Error: Could not find words file at {wordsFilePath}. Please check Streamer.bot 'Set Argument' configuration or ensure 'words.txt' is in the bot folder.");
+                return false;
+            }
+
+            string[] allWords = File.ReadAllLines(wordsFilePath);
 
             if(allWords.Length >= 3)
             {
@@ -63,7 +74,7 @@ public class CPHInline
         catch (Exception ex) 
         {
             CPH.LogInfo("Word Fetch Error: " + ex.Message);
-            CPH.SendMessage("Error fetching words from words.txt.");
+            CPH.SendMessage("Error fetching words. Check Streamer.bot logs for details.");
         }
         
         return true;

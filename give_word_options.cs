@@ -48,7 +48,7 @@ public class CPHInline
                     CPH.SetGlobalVar("guessing-game_state", "waiting", true); // Set game state to waiting
 
                     // 4. Send the whisper
-                    string message = $"Duck, Duck, Guess! Reply to this whisper with A, B, or C.  A - {words[0]}   B - {words[1]}   C - {words[2]}";
+                    string message = $"Duck, Duck, Guess! Reply to this whisper with A, B, or C to lock in the secret word. a) {words[0]}, b) {words[1]}, c) {words[2]}";
                     CPH.SendWhisper(guestUser, message, true);
                     
                     // 5. Let chat know we are waiting

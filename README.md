@@ -5,7 +5,7 @@ This project allows a broadcaster to secretly whisper a choice of three random w
 
 ## **Features**
 
-* **Automated Word Generation:** Fetches 3 random words via a free API and whispers them to the player.
+* **Automated Word Generation:** Fetches 3 random words from a local `words.txt` file and whispers them to the player.
 * **Seamless Twitch Integration:** Fully contained within Streamer.bot—no manual Discord DMs or third-party scorekeeping required.
 * **Real-time Leaderboard:** Tracks points during the stream and updates a sliding leaderboard instantly.
 * **Animated OBS Overlay:** Built with HTML, Tailwind CSS, and vanilla JavaScript (no external animation libraries needed). Includes a custom particle confetti system.
@@ -38,12 +38,12 @@ You will need to create three separate Actions in Streamer.bot.
 * **Name:** GiveWordOptions
 * **Trigger:** Twitch -> Chat -> Command (Create a command like !giveword and restrict it to Broadcaster/Moderator).
 * **Sub-Action:** Core -> C# -> Execute C# Code.
-* **Code:** Paste the contents of generate_options_action.cs. *(Note: You must add System.dll and System.Net.Http.dll in the references tab of the C# compiler).*
+* **Code:** Paste the contents of generate_options_action.cs. *(Note: You must add System.dll in the references tab of the C# compiler).*
 
 #### **Action 2: Lock In Whisper**
 
 * **Name:** ProcessWhisper
-* **Trigger:** Twitch -> Chat -> Whisper.
+* **Trigger:** Twitch -> Chat -> Bot Whispers.
 * **Sub-Action:** Core -> C# -> Execute C# Code.
 * **Code:** Paste the contents of lock_in_whisper_action.cs.
 
@@ -57,10 +57,11 @@ You will need to create three separate Actions in Streamer.bot.
 ## **How to Play Live**
 
 1. **Start the Game:** Type !giveword \[username] in your Twitch chat.
-2. **The Whisper:** Streamer.bot will securely whisper 3 options to that user (e.g., *A) Keyboard B) Telescope C) Apple*).
+2. **The Whisper:** Streamer.bot will securely whisper 3 options to that user (e.g., *A - Keyboard B - Telescope C - Apple*).
 3. **The Lock-In:** The user replies to the whisper with exactly A, B, or C.
 4. **The Game Begins:** The bot confirms the word in the whisper and announces in chat that the game has started.
 5. **The Win:** Chatters guess words wildly. The moment someone types the exact word, the OBS overlay triggers, their name and points are added to the leaderboard, and the secret word is cleared to prevent duplicate winners.
+6. **The Goose Forfeits:** If the clue giver (the Goose) types the secret word in chat, they forfeit the game, no one wins, and the round ends.
 
 ## **Customization**
 

@@ -5,14 +5,14 @@ public class CPHInline
     public bool Execute()
     {
         // 1. Check who sent the whisper and what they said
-        CPH.TryGetArg("user", out string userArg);
+        CPH.TryGetArg("userName", out string userArg);
         string whisperSender = string.IsNullOrEmpty(userArg) ? "" : userArg.ToLower();
 
         CPH.TryGetArg("message", out string msgArg);
         string message = string.IsNullOrEmpty(msgArg) ? "" : msgArg.Trim().ToUpper();
         
         // 2. Check who our current guest is supposed to be
-        string currentGuest = CPH.GetGlobalVar<string>("currentGuest");
+        string currentGuest = CPH.GetGlobalVar<string>("guessing-game_currentGuest");
 
         // If no game is pending, or someone else whispered the bot, ignore it
         if (string.IsNullOrEmpty(currentGuest) || whisperSender != currentGuest.ToLower()) return true;
@@ -20,9 +20,9 @@ public class CPHInline
         string lockedWord = "";
 
         // 3. Match their reply to the saved options
-        if (message == "A") lockedWord = CPH.GetGlobalVar<string>("guestOptions_A");
-        else if (message == "B") lockedWord = CPH.GetGlobalVar<string>("guestOptions_B");
-        else if (message == "C") lockedWord = CPH.GetGlobalVar<string>("guestOptions_C");
+        if (message.StartsWith("A")) lockedWord = CPH.GetGlobalVar<string>("guessing-game_guestOptions_A");
+        else if (message.StartsWith("B")) lockedWord = CPH.GetGlobalVar<string>("guessing-game_guestOptions_B");
+        else if (message.StartsWith("C")) lockedWord = CPH.GetGlobalVar<string>("guessing-game_guestOptions_C");
         else 
         {
             CPH.SendWhisper(whisperSender, "Invalid choice. Please reply with exactly A, B, or C.", true);
@@ -30,10 +30,10 @@ public class CPHInline
         }
 
         // 4. Lock the final word into the variable for chat to guess!
-        CPH.SetGlobalVar("secretWord", lockedWord, true);
+        CPH.SetGlobalVar("guessing-game_secretWord", lockedWord, true);
         
         // 5. Clear the guest variable so they can't change it
-        CPH.SetGlobalVar("currentGuest", "", true);
+        CPH.SetGlobalVar("guessing-game_currentGuest", "", true);
 
         // 6. Confirm with the guest & announce to stream
         CPH.SendWhisper(whisperSender, $"Locked in! Your word is: {lockedWord}. Start creating!", true);

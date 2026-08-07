@@ -1,0 +1,25 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "An interactive, automated guessing game built for Twitch streams using [Streamer.bot](https://streamer.bot/) and an OBS HTML overlay.   This project allows a broadcaster to secretly whisper a choice of three random words to a guest (or themselves). Once the guest locks in their choice, chat can guess the word in real-time. The first chatter to guess correctly triggers an on-screen confetti celebration and earns points on a dynamic, live-updating OBS scoreboard.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karenchaudesigns/stream-guessing-game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/karenchaudesigns/stream-guessing-game/issues"
+  },
+  "homepage": "https://github.com/karenchaudesigns/stream-guessing-game#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "ws": "^8.21.2"
+  }
+}

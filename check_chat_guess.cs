@@ -6,11 +6,16 @@ public class CPHInline
     {
         // 1. Grab chat message and user data
         CPH.TryGetArg("message", out string msgArg);
-        string chatMessage = string.IsNullOrEmpty(msgArg) ? "" : msgArg.Trim().ToUpper();
+        string originalMessage = string.IsNullOrEmpty(msgArg) ? "" : msgArg.Trim();
+        string chatMessage = originalMessage.ToUpper();
 
         CPH.TryGetArg("userName", out string userArg);
         string chatUser = string.IsNullOrEmpty(userArg) ? "Someone" : userArg;
         
+        string userColor = "#ffffff";
+        if (CPH.TryGetArg("userColor", out string uColor) && !string.IsNullOrEmpty(uColor)) userColor = uColor;
+        else if (CPH.TryGetArg("color", out string colorArg) && !string.IsNullOrEmpty(colorArg)) userColor = colorArg;
+
         // 2. Get the current active secret word and goose
         string secretWord = CPH.GetGlobalVar<string>("guessing-game_secretWord");
         string currentGoose = CPH.GetGlobalVar<string>("guessing-game_currentGuest");
@@ -18,9 +23,18 @@ public class CPHInline
         // If the game isn't active (word is empty or null), do nothing
         if (string.IsNullOrEmpty(secretWord)) return true;
 
-        // 3. Check for a match
-        if (chatMessage == secretWord)
+        // 3. Only process as a guess if it's a single word
+        if (!originalMessage.Contains(" "))
         {
+            bool isCorrect = (chatMessage == secretWord);
+
+            // Broadcast the guess for the overlay
+            string guessPayload = $"{{\"event\":\"guess\",\"user\":\"{chatUser}\",\"color\":\"{userColor}\",\"word\":\"{originalMessage}\",\"isCorrect\":{isCorrect.ToString().ToLower()}}}";
+            CPH.WebsocketBroadcastString(guessPayload);
+
+            // Check for a match
+            if (isCorrect)
+            {
             if (chatUser.ToLower() == currentGoose?.ToLower())
             {
                 // GOOSE GAVE UP!
@@ -55,6 +69,7 @@ public class CPHInline
 
                 string statePayload = "{\"event\":\"state_change\",\"state\":\"inactive\"}";
                 CPH.WebsocketBroadcastString(statePayload);
+            }
             }
         }
         

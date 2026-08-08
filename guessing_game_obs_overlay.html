@@ -253,12 +253,29 @@
                 console.log(`Attempting to connect to Streamer.bot at ${wsUrl}`);
                 ws = new WebSocket(wsUrl);
                 
-                ws.onopen = () => console.log('Connected to Streamer.bot!');
+                ws.onopen = () => {
+                    console.log('Connected to Streamer.bot!');
+                    ws.send(JSON.stringify({ request: "GetGlobalVariables", id: "init_state", persisted: true }));
+                };
                 
                 ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
-                        if(data.event === "winner") {
+                        if(data.id === "init_state" && data.status === "ok" && data.variables) {
+                            // Safely handle both array-of-objects and key-value object structures
+                            const variables = Array.isArray(data.variables) ? data.variables :
+                                              (data.variables.length === undefined && typeof data.variables === 'object') ? Object.entries(data.variables).map(([k, v]) => typeof v === 'object' ? v : {name: k, value: v}) : [];
+
+                            variables.forEach(variable => {
+                                if(variable.name === "guessing-game_state") {
+                                    handleStateChange(variable.value);
+                                } else if(variable.name && variable.name.startsWith("guessing-game_score_")) {
+                                    const username = variable.name.replace("guessing-game_score_", "");
+                                    scores[username] = parseInt(variable.value) || 0;
+                                }
+                            });
+                            renderLeaderboard();
+                        } else if(data.event === "winner") {
                             handleWinner(data.user, data.word, data.points || 10);
                         } else if (data.event === "give_up") {
                             handleGiveUp(data.word);

@@ -16,8 +16,10 @@ public class CPHInline
 
         try 
         {
-            // 2. Fetch words from the local words.txt file
-            string[] allWords = File.ReadAllLines("words.txt");
+            // 2. Fetch words from the local words.txt file (or custom path)
+            CPH.TryGetArg("wordsFilePath", out string customPath);
+            string wordsFilePath = string.IsNullOrEmpty(customPath) ? "words.txt" : customPath;
+            string[] allWords = File.ReadAllLines(wordsFilePath);
 
             if(allWords.Length >= 3)
             {

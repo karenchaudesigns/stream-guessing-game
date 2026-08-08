@@ -264,7 +264,7 @@
                         if(data.id === "init_state" && data.status === "ok" && data.variables) {
                             // Safely handle both array-of-objects and key-value object structures
                             const variables = Array.isArray(data.variables) ? data.variables :
-                                              (data.variables.length === undefined && typeof data.variables === 'object') ? Object.entries(data.variables).map(([k, v]) => typeof v === 'object' ? v : {name: k, value: v}) : [];
+                                              (data.variables.length === undefined && typeof data.variables === 'object') ? Object.entries(data.variables).map(([k, v]) => typeof v === 'object' ? {name: k, ...v} : {name: k, value: v}) : [];
 
                             variables.forEach(variable => {
                                 if(variable.name === "guessing-game_state") {

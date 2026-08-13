@@ -66,9 +66,9 @@ public class CPHInline
 
                 // Format a JSON message to broadcast to our OBS HTML overlay
                 int pointsAwarded = 10;
-                int currentPoints = CPH.GetGlobalVar<int>($"guessing-game_score_{chatUser}");
+                int currentPoints = CPH.GetTwitchUserVar<int>(chatUser, "guessing-game_score", false);
                 int newPoints = currentPoints + pointsAwarded;
-                CPH.SetGlobalVar($"guessing-game_score_{chatUser}", newPoints, true);
+                CPH.SetTwitchUserVar(chatUser, "guessing-game_score", newPoints, false);
 
                 string winnerPayload = $"{{\"event\":\"winner\",\"user\":\"{chatUser}\",\"word\":\"{secretWord}\",\"points\":{pointsAwarded}}}";
 

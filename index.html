@@ -256,11 +256,15 @@
                 ws.onopen = () => {
                     console.log('Connected to Streamer.bot!');
                     ws.send(JSON.stringify({ request: "GetGlobalVariables", id: "init_state", persisted: true }));
+                    // Fetch non-persisted user variables to populate leaderboard
+                    ws.send(JSON.stringify({ request: "GetUserVariables", id: "init_scores", persisted: false }));
                 };
                 
                 ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
+
+                        // Parse GetGlobalVariables response
                         if(data.id === "init_state" && data.status === "ok" && data.variables) {
                             // Safely handle both array-of-objects and key-value object structures
                             const variables = Array.isArray(data.variables) ? data.variables :
@@ -269,11 +273,20 @@
                             variables.forEach(variable => {
                                 if(variable.name === "guessing-game_state") {
                                     handleStateChange(variable.value);
-                                } else if(variable.name && variable.name.startsWith("guessing-game_score_")) {
-                                    const username = variable.name.replace("guessing-game_score_", "");
-                                    scores[username] = parseInt(variable.value) || 0;
                                 }
                             });
+                        }
+                        // Parse GetUserVariables response
+                        else if(data.id === "init_scores" && data.status === "ok" && data.users) {
+                            // Parse nested users object
+                            for (const [username, vars] of Object.entries(data.users)) {
+                                if (vars && typeof vars === 'object') {
+                                    const scoreVar = vars["guessing-game_score"];
+                                    if (scoreVar !== undefined) {
+                                        scores[username] = parseInt(typeof scoreVar === 'object' ? scoreVar.value : scoreVar) || 0;
+                                    }
+                                }
+                            }
                             renderLeaderboard();
                         } else if(data.event === "winner") {
                             handleWinner(data.user, data.word, data.points || 10);

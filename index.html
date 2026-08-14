@@ -256,8 +256,8 @@
                 ws.onopen = () => {
                     console.log('Connected to Streamer.bot!');
                     ws.send(JSON.stringify({ request: "GetGlobalVariables", id: "init_state", persisted: true }));
-                    // Fetch non-persisted user variables to populate leaderboard
-                    ws.send(JSON.stringify({ request: "GetUserVariables", id: "init_scores", persisted: false }));
+                    // Fetch persisted user variables to populate leaderboard
+                    ws.send(JSON.stringify({ request: "GetUserVariables", id: "init_scores", persisted: true }));
                 };
                 
                 ws.onmessage = (event) => {

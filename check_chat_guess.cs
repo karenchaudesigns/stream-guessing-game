@@ -26,6 +26,22 @@ public class CPHInline
         // 3. Only process as a guess if it's a single word
         if (!originalMessage.Contains(" "))
         {
+            // Track participant for active game
+            string participantsList = CPH.GetGlobalVar<string>("guessing-game_participants", true);
+            if (string.IsNullOrEmpty(participantsList))
+            {
+                CPH.SetGlobalVar("guessing-game_participants", chatUser, true);
+            }
+            else
+            {
+                var participants = new System.Collections.Generic.List<string>(participantsList.Split(','));
+                if (!participants.Contains(chatUser))
+                {
+                    participants.Add(chatUser);
+                    CPH.SetGlobalVar("guessing-game_participants", string.Join(",", participants), true);
+                }
+            }
+
             bool isCorrect = (chatMessage == secretWord);
 
             // Broadcast the guess for the overlay
@@ -66,9 +82,41 @@ public class CPHInline
 
                 // Format a JSON message to broadcast to our OBS HTML overlay
                 int pointsAwarded = 10;
-                int currentPoints = CPH.GetTwitchUserVar<int>(chatUser, "guessing-game_score", false);
+                int currentPoints = CPH.GetTwitchUserVar<int>(chatUser, "guessing-game_score", true);
                 int newPoints = currentPoints + pointsAwarded;
-                CPH.SetTwitchUserVar(chatUser, "guessing-game_score", newPoints, false);
+                CPH.SetTwitchUserVar(chatUser, "guessing-game_score", newPoints, true);
+
+                // Update leaderboard global variable
+                string leaderboardData = CPH.GetGlobalVar<string>("guessing-game_leaderboard_data", true);
+                var scores = new System.Collections.Generic.Dictionary<string, int>();
+
+                if (!string.IsNullOrEmpty(leaderboardData))
+                {
+                    foreach (var entry in leaderboardData.Split(','))
+                    {
+                        var parts = entry.Split(':');
+                        if (parts.Length == 2 && int.TryParse(parts[1], out int score))
+                        {
+                            scores[parts[0]] = score;
+                        }
+                    }
+                }
+
+                scores[chatUser] = newPoints;
+
+                var sortedList = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, int>>(scores);
+                sortedList.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+                var dataParts = new System.Collections.Generic.List<string>();
+                var jsonParts = new System.Collections.Generic.List<string>();
+                foreach (var kvp in sortedList)
+                {
+                    dataParts.Add($"{kvp.Key}:{kvp.Value}");
+                    jsonParts.Add($"{{\"username\":\"{kvp.Key}\",\"score\":{kvp.Value}}}");
+                }
+
+                CPH.SetGlobalVar("guessing-game_leaderboard_data", string.Join(",", dataParts), true);
+                CPH.SetGlobalVar("guessing-game_leaderboard", "[" + string.Join(",", jsonParts) + "]", true);
 
                 string winnerPayload = $"{{\"event\":\"winner\",\"user\":\"{chatUser}\",\"word\":\"{secretWord}\",\"points\":{pointsAwarded}}}";
 

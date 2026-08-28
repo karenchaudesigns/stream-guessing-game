@@ -55,7 +55,7 @@ public class CPHInline
             {
                 // GOOSE GAVE UP!
                 CPH.SetGlobalVar("guessing-game_secretWord", "", true);
-                CPH.SetGlobalVar("guessing-game_state", "inactive", true);
+                CPH.SetGlobalVar("guessing-game_state", "recap", true);
                 CPH.SetGlobalVar("guessing-game_currentGuest", "", true);
                 CPH.SetGlobalVar("guessing-game_winner", "", true);
                 CPH.SetGlobalVar("guessing-game_winningWord", "", true);
@@ -65,14 +65,14 @@ public class CPHInline
                 string giveUpPayload = $"{{\"event\":\"give_up\",\"word\":\"{secretWord}\"}}";
                 CPH.WebsocketBroadcastString(giveUpPayload);
 
-                string statePayload = "{\"event\":\"state_change\",\"state\":\"inactive\"}";
+                string statePayload = "{\"event\":\"state_change\",\"state\":\"recap\"}";
                 CPH.WebsocketBroadcastString(statePayload);
             }
             else
             {
                 // WE HAVE A WINNER (DUCK)!
                 CPH.SetGlobalVar("guessing-game_secretWord", "", true);
-                CPH.SetGlobalVar("guessing-game_state", "inactive", true);
+                CPH.SetGlobalVar("guessing-game_state", "recap", true);
                 CPH.SetGlobalVar("guessing-game_currentGuest", "", true);
                 CPH.SetGlobalVar("guessing-game_winner", chatUser, true);
                 CPH.SetGlobalVar("guessing-game_winningWord", secretWord, true);
@@ -123,7 +123,7 @@ public class CPHInline
                 // Broadcast via Streamer.bot WebSocket Server
                 CPH.WebsocketBroadcastString(winnerPayload);
 
-                string statePayload = "{\"event\":\"state_change\",\"state\":\"inactive\"}";
+                string statePayload = "{\"event\":\"state_change\",\"state\":\"recap\"}";
                 CPH.WebsocketBroadcastString(statePayload);
             }
             }

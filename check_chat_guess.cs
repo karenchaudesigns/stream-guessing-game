@@ -57,8 +57,8 @@ public class CPHInline
                 CPH.SetGlobalVar("guessing-game_secretWord", "", true);
                 CPH.SetGlobalVar("guessing-game_state", "recap", true);
                 CPH.SetGlobalVar("guessing-game_currentGuest", "", true);
-                CPH.SetGlobalVar("guessing-game_winner", "", true);
-                CPH.SetGlobalVar("guessing-game_winningWord", "", true);
+                CPH.SetGlobalVar("guessing-game_winner", $"{currentGoose} forfeited", true);
+                CPH.SetGlobalVar("guessing-game_winningWord", secretWord, true);
 
                 CPH.SendMessage($"❌ The Goose (@{chatUser}) gave up! The word was {secretWord}. No one wins this round.");
 

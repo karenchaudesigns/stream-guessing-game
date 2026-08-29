@@ -274,7 +274,11 @@
                 if (currentWinner === "") {
                     hideAnnouncement();
                 } else {
-                    winnerText.textContent = `WINNER: ${currentWinner}`;
+                    if (currentWinner.toLowerCase().includes("forfeited")) {
+                        winnerText.textContent = currentWinner.toUpperCase();
+                    } else {
+                        winnerText.textContent = `WINNER: ${currentWinner}`;
+                    }
 
                     if (newAnswer !== "") {
                         answerText.textContent = `ANSWER: ${newAnswer}`;

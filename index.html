@@ -42,16 +42,6 @@
         position: relative;
       }
 
-      #confetti {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        pointer-events: none;
-        z-index: 9999;
-      }
-
       /* Layout */
       .layout-container {
         position: absolute;
@@ -639,8 +629,6 @@
     </style>
   </head>
   <body>
-    <canvas id="confetti"></canvas>
-
     <div class="layout-container">
       <!-- Left Panel: Leaderboard -->
       <div class="left-panel">
@@ -737,73 +725,11 @@
       const progressRing = document.getElementById("progressRing");
       const ringCircle = document.getElementById("ringCircle");
 
-      // Confetti
-      const canvas = document.getElementById("confetti");
-      const ctx = canvas.getContext("2d");
-      let particles = [];
-      let animationId;
-
       // --- INIT TIMER SVG ---
       const radius = ringCircle.r.baseVal.value;
       const circumference = radius * 2 * Math.PI;
       ringCircle.style.strokeDasharray = `${circumference} ${circumference}`;
       ringCircle.style.strokeDashoffset = circumference;
-
-      // --- CONFETTI LOGIC ---
-      function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
-      window.addEventListener("resize", resizeCanvas);
-      resizeCanvas();
-
-      function fireConfetti() {
-        particles = [];
-        const colors = ["#facc15", "#06b6d4", "#2dd4bf", "#ea580c", "#43d9f2"];
-
-        for (let i = 0; i < 150; i++) {
-          particles.push({
-            x: canvas.width / 2,
-            y: -20,
-            r: Math.random() * 6 + 4,
-            dx: Math.random() * 10 - 5,
-            dy: Math.random() * -10 + 2,
-            color: colors[Math.floor(Math.random() * colors.length)],
-            tilt: Math.random() * 10 - 10,
-            tiltAngleInc: Math.random() * 0.07 + 0.05,
-            tiltAngle: 0,
-          });
-        }
-
-        if (animationId) cancelAnimationFrame(animationId);
-        animateConfetti();
-      }
-
-      function animateConfetti() {
-        requestAnimationFrame(animateConfetti);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        let active = false;
-        particles.forEach((p) => {
-          p.tiltAngle += p.tiltAngleInc;
-          p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2 + 2;
-          p.x += Math.sin(p.tiltAngle) * 2 + p.dx;
-
-          if (p.y <= canvas.height) active = true;
-
-          ctx.beginPath();
-          ctx.lineWidth = p.r;
-          ctx.strokeStyle = p.color;
-          ctx.moveTo(p.x + p.tilt + p.r, p.y);
-          ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
-          ctx.stroke();
-        });
-
-        if (!active) {
-          cancelAnimationFrame(animationId);
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-      }
 
       // --- TIMER LOGIC ---
       function setTimerProgress(percent) {
@@ -948,7 +874,6 @@
       // --- ANNOUNCEMENT LOGIC ---
       function showAnnouncement() {
         announceBox.classList.add("show");
-        fireConfetti();
       }
 
       function hideAnnouncement() {
@@ -1043,7 +968,11 @@
           if (currentWinner === "") {
             hideAnnouncement();
           } else {
-            winnerText.textContent = `WINNER: ${currentWinner}`;
+            if (currentWinner.toLowerCase().includes("forfeited")) {
+                winnerText.textContent = currentWinner.toUpperCase();
+            } else {
+                winnerText.textContent = `WINNER: ${currentWinner}`;
+            }
 
             if (newAnswer !== "") {
               answerText.textContent = `ANSWER: ${newAnswer}`;

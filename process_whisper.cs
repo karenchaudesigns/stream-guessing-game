@@ -42,6 +42,17 @@ public class CPHInline
         string jsonPayload = "{\"event\":\"state_change\",\"state\":\"active\"}";
         CPH.WebsocketBroadcastString(jsonPayload);
 
+        // 7. Broadcast custom GameStart event for timer
+        string timerDurationStr = CPH.GetGlobalVar<string>("guessing-game_timerDuration");
+        int timerDuration = 2; // Default to 2 minutes
+        if (!string.IsNullOrEmpty(timerDurationStr) && int.TryParse(timerDurationStr, out int parsedDuration))
+        {
+            timerDuration = parsedDuration;
+        }
+
+        string gameStartPayload = $"{{\"event\":{{\"source\":\"General\",\"type\":\"Custom\"}},\"data\":{{\"name\":\"GameStart\",\"arguments\":{{\"guessing-game_timerDuration\":{timerDuration},\"guessing-game_secretWord\":\"{lockedWord}\"}}}}}}";
+        CPH.WebsocketBroadcastString(gameStartPayload);
+
         return true;
     }
 }

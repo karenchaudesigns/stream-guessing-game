@@ -88,7 +88,7 @@
         .state-stopwatch .time-display {
             font-size: 5rem; /* Massive text for seconds only */
         }
-        
+
         .secs-label {
             font-size: 1rem;
             text-transform: uppercase;
@@ -107,8 +107,8 @@
         .state-danger .progress-ring__circle {
             stroke: var(--red);
         }
-        
-        .state-danger .time-display, 
+
+        .state-danger .time-display,
         .state-danger .secs-label {
             color: var(--red);
         }
@@ -145,13 +145,13 @@
             margin: 5px;
             transition: background 0.2s ease, transform 0.1s ease;
         }
-        #control-panel button:hover { 
+        #control-panel button:hover {
             background: var(--yellow);
             transform: scale(1.05);
         }
-        #control-panel input { 
-            padding: 5px; 
-            width: 60px; 
+        #control-panel input {
+            padding: 5px;
+            width: 60px;
             text-align: center;
             background: var(--teal-light);
             border: 1px solid var(--yellow);
@@ -187,7 +187,7 @@
         const timeDisplay = document.getElementById('timeDisplay');
         const progressRing = document.getElementById('progressRing');
         const ringCircle = document.getElementById('ringCircle');
-        
+
         let timerInterval;
         let timeRemaining = 0;
         let totalSeconds = 0;
@@ -225,7 +225,7 @@
                 // <= 1 Minute: Stopwatch Mode (SS)
                 progressRing.classList.add('visible');
                 timeDisplay.innerText = seconds.toString().padStart(2, '0');
-                
+
                 // Calculate percentage based on 60 seconds total for the ring
                 const percent = (timeRemaining / 60) * 100;
                 setProgress(percent);
@@ -242,9 +242,9 @@
             clearInterval(timerInterval);
             totalSeconds = durationMinutes * 60;
             timeRemaining = totalSeconds;
-            
+
             updateTimerDisplay();
-            
+
             timerInterval = setInterval(() => {
                 timeRemaining--;
                 updateTimerDisplay();
@@ -276,18 +276,18 @@
 
                 ws.onmessage = (event) => {
                     const msg = JSON.parse(event.data);
-                    
+
                     // Listen for the secret word being set to trigger the start
                     if (msg.event?.source === 'General' && msg.event?.type === 'Custom' && msg.data?.name === 'GameStart') {
                         // Assuming you pass guessing-game_timerDuration as an argument in a Custom Event named 'GameStart'
                         const duration = msg.data.arguments['guessing-game_timerDuration'] || 2; // Default 2 mins
                         const secretWord = msg.data.arguments['guessing-game_secretWord'];
-                        
+
                         if (secretWord && secretWord.trim() !== "") {
                             startTimer(parseInt(duration));
                         }
                     }
-                    
+
                     // Listen for manual stop/reset
                     if (msg.event?.source === 'General' && msg.event?.type === 'Custom' && msg.data?.name === 'GameStop') {
                         stopTimer();
@@ -307,7 +307,7 @@
                         request: 'DoAction',
                         action: {
                             // You would create an action in SB called "Timer Finished" that sets guessing-game_timerStatus to "timedout"
-                            name: 'Timer Finished' 
+                            name: 'Timer Finished'
                         },
                         id: 'timer-finished-trigger'
                     }));

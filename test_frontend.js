@@ -7,18 +7,17 @@ const puppeteer = require('puppeteer');
   wss.on('connection', (ws) => {
     ws.on('message', (message) => {
       const data = JSON.parse(message);
-      if (data.request === 'GetGlobalVariables') {
-        // Send initial recap state
+      if (data.request === 'GetGlobals' || data.request === 'GetGlobalVariables') {
+        // We merged all scripts so we must return variables in the format expected by the integrated app
         ws.send(JSON.stringify({
           id: data.id,
           status: 'ok',
-          variables: [{ name: 'guessing-game_state', value: 'recap' }]
-        }));
-      } else if (data.request === 'GetUserVariables') {
-        ws.send(JSON.stringify({
-          id: data.id,
-          status: 'ok',
-          users: {}
+          variables: {
+            'guessing-game_state': { value: 'recap' },
+            'guessing-game_winner': { value: 'TestUser' },
+            'guessing-game_winningWord': { value: 'TESTWORD' },
+            'guessing-game_currentGuest': { value: 'GuestUser' }
+          }
         }));
       }
     });
@@ -33,17 +32,18 @@ const puppeteer = require('puppeteer');
   await page.goto(indexUrl, { waitUntil: 'networkidle2' });
 
   // Wait for the websocket to connect and update the state
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
-  // Check the game state text
-  const stateText = await page.$eval('#game-state-text', el => el.innerText);
-  console.log(`Game state text: ${stateText}`);
+  // Check the title of clue which indicates state in new UI
+  const clueTitleText = await page.$eval('#clueTitle', el => el.innerText);
+  console.log(`Clue title text: ${clueTitleText}`);
 
-  // Check the game state indicator color
-  const indicatorClassName = await page.$eval('#game-state-indicator', el => el.className);
-  console.log(`Indicator class name: ${indicatorClassName}`);
+  // Check announcement
+  const winnerText = await page.$eval('#winner-text', el => el.innerText);
+  console.log(`Winner text: ${winnerText}`);
 
-  if (stateText === 'ROUND RECAP' && indicatorClassName.includes('bg-blue-400')) {
+  // In the new code, recap state sets the clue title to "Round Over!"
+  if (clueTitleText.toLowerCase().includes('round over') && winnerText.toLowerCase().includes('testuser')) {
       console.log('Frontend logic verified successfully!');
   } else {
       console.error('Frontend logic verification failed!');

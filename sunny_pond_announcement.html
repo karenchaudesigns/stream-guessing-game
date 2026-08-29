@@ -46,18 +46,18 @@
             padding: 40px 60px;
             text-align: center;
             box-shadow: 0 0 40px rgba(6, 182, 212, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.8);
-            
+
             /* Flexible width and text wrapping to prevent overflow */
             width: 80vw;
             max-width: 800px;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            
+
             /* Position perfectly in the center */
             position: absolute;
             top: 50%;
             left: 50%;
-            
+
             /* Hidden state by default - incorporate -50% translation for centering */
             opacity: 0;
             transform: translate(-50%, -30%) scale(0.8);
@@ -79,7 +79,7 @@
             text-transform: uppercase;
             letter-spacing: 4px;
             color: var(--yellow);
-            text-shadow: 
+            text-shadow:
                 3px 3px 0 #000,
                 -1px -1px 0 #000,
                 0 -1px 0 #000,
@@ -96,7 +96,7 @@
             font-weight: 700;
             margin-top: 15px;
             color: var(--cyan-light);
-            text-shadow: 
+            text-shadow:
                 2px 2px 0 #000,
                 -1px -1px 0 #000,
                 0 -1px 0 #000,
@@ -118,13 +118,13 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            
+
             /* Positioned at the bottom for testing */
             position: absolute;
             bottom: 20px;
             z-index: 10;
         }
-        
+
         .sim-header {
             font-weight: bold;
             color: var(--teal-dark);
@@ -179,18 +179,18 @@
 
     <script>
         const WS_URL = 'ws://127.0.0.1:8080/';
-        const POLL_INTERVAL_MS = 1000; 
+        const POLL_INTERVAL_MS = 1000;
         const REQUEST_ID = 'guessing_game_announce_poll';
 
-        const VAR_WINNER = 'guessing-game_winner'; 
-        const VAR_ANSWER = 'guessing-game_winningWord'; 
-        const VAR_STATE = 'guessing-game_state'; 
+        const VAR_WINNER = 'guessing-game_winner';
+        const VAR_ANSWER = 'guessing-game_winningWord';
+        const VAR_STATE = 'guessing-game_state';
 
         let ws;
         let pollInterval;
-        let currentWinner = ""; 
+        let currentWinner = "";
         let mockIntervalActive = false;
-        
+
         const announceBox = document.getElementById('announcement-box');
         const winnerText = document.getElementById('winner-text');
         const answerText = document.getElementById('answer-text');
@@ -209,7 +209,7 @@
 
                 ws.onmessage = (event) => {
                     const data = JSON.parse(event.data);
-                    
+
                     if (data.id === REQUEST_ID && data.variables) {
                         checkAnnouncement(data.variables);
                     }
@@ -219,15 +219,15 @@
                     connStatus.textContent = 'Disconnected';
                     connStatus.className = 'disconnected';
                     clearInterval(pollInterval);
-                    hideAnnouncement(); 
-                    
+                    hideAnnouncement();
+
                     if (!mockIntervalActive) {
                         setTimeout(connect, 5000);
                     }
                 };
 
                 ws.onerror = (error) => {
-                    ws.close(); 
+                    ws.close();
                 };
             } catch (error) {
                 console.warn("WebSocket creation failed.");
@@ -239,7 +239,7 @@
                 const request = {
                     request: "GetGlobals",
                     id: REQUEST_ID,
-                    persisted: true 
+                    persisted: true
                 };
                 ws.send(JSON.stringify(request));
             }
@@ -270,19 +270,19 @@
             // If state is recap, update and show if winner exists
             if (newWinner !== currentWinner) {
                 currentWinner = newWinner;
-                
+
                 if (currentWinner === "") {
                     hideAnnouncement();
                 } else {
                     winnerText.textContent = `WINNER: ${currentWinner}`;
-                    
+
                     if (newAnswer !== "") {
                         answerText.textContent = `ANSWER: ${newAnswer}`;
                         answerText.style.display = 'block';
                     } else {
                         answerText.style.display = 'none';
                     }
-                    
+
                     showAnnouncement();
                 }
             }
@@ -300,26 +300,26 @@
             mockIntervalActive = true;
             connStatus.textContent = 'Simulation Mode Active';
             connStatus.className = 'connected';
-            
+
             if (ws) { ws.onclose = null; ws.close(); }
-            
+
             currentWinner = "";
             hideAnnouncement();
 
             setTimeout(() => {
                 const mockVars = {};
-                
+
                 const names = ["DuckFan99", "QuackMaster", "PondSkimmer"];
                 const words = ["BREAD", "FEATHERS", "WADDLE"];
                 const randomName = names[Math.floor(Math.random() * names.length)];
                 const randomWord = words[Math.floor(Math.random() * words.length)];
-                
+
                 mockVars[VAR_WINNER] = { value: randomName };
                 mockVars[VAR_ANSWER] = { value: randomWord };
-                mockVars[VAR_STATE] = { value: 'recap' }; 
-                
+                mockVars[VAR_STATE] = { value: 'recap' };
+
                 checkAnnouncement(mockVars);
-                
+
                 // Hide automatically after 4 seconds to simulate changing state out of recap
                 setTimeout(() => {
                     mockVars[VAR_STATE] = { value: 'inactive' };

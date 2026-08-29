@@ -25,7 +25,7 @@
             align-items: center;
             padding-top: 50px; /* Leave room for stylus to clear top edge */
         }
-        
+
         .clue-widget {
             position: relative;
             background: transparent; /* Inside is fully transparent */
@@ -36,7 +36,7 @@
             min-height: 350px;
             display: flex;
             flex-direction: column;
-            
+
             /* Entrance Animation */
             animation: bounceIn 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
         }
@@ -57,8 +57,8 @@
             border-radius: 4px 60px 60px 4px; /* Flat back left, sharp tapered nib right */
             font-weight: 900;
             font-size: 1.1rem;
-            box-shadow: 
-                inset 0 -2px 5px rgba(0,0,0,0.2), 
+            box-shadow:
+                inset 0 -2px 5px rgba(0,0,0,0.2),
                 inset 0 2px 5px rgba(255,255,255,0.8),
                 0 5px 10px rgba(0,0,0,0.3);
             border-left: 8px solid #ccc; /* Silver band detail */
@@ -79,7 +79,7 @@
             text-align: center;
             padding: 12px;
             border-bottom: 2px solid var(--teal-dark);
-            border-radius: 12px 12px 0 0; 
+            border-radius: 12px 12px 0 0;
             letter-spacing: 1px;
             text-shadow: none;
             transition: all 0.3s ease;
@@ -102,7 +102,7 @@
             font-size: 3rem;
             font-weight: 900;
             line-height: 1.2;
-            text-shadow: 
+            text-shadow:
                 2px 2px 0 #000,
                 -1px -1px 0 #000,
                 0 -1px 0 #000,
@@ -136,7 +136,7 @@
         input, select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box;}
         button { background: var(--orange); color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;}
         button:hover { background: var(--teal-bright); }
-        
+
         #connection-status {
             font-size: 0.8rem;
             font-weight: bold;
@@ -218,10 +218,10 @@
 
         function connect() {
             if (simulationMode) return;
-            
+
             try {
                 ws = new WebSocket(WS_URL);
-                
+
                 ws.onopen = () => {
                     connStatus.textContent = 'Connected to Streamer.bot';
                     connStatus.className = 'connected';
@@ -281,12 +281,12 @@
 
             const simState = document.getElementById('simState').value;
             const simGuest = document.getElementById('simGuest').value;
-            
+
             let simClue = '';
             if (simState === 'active') {
-                simClue = 'QUACK'; 
+                simClue = 'QUACK';
             }
-            
+
             updateUI(simState, simGuest, simClue);
         }
 

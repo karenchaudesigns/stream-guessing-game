@@ -1,387 +1,1132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Guessing Game Overlay</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- We will inject CSS here later -->
     <style>
-        body {
-            font-family: 'Outfit', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: transparent; /* Remains transparent for OBS */
-            overflow: hidden;
-            color: white;
-        }
+      /* --- GLOBAL --- */
+      :root {
+        /* Sunny Pond Palette */
+        --cyan-light: #ecfeff;
+        --cyan: #06b6d4;
+        --teal-bright: #2dd4bf;
+        --teal-dark: #115e59;
+        --yellow: #facc15;
+        --orange: #ea580c;
+        --cyan-neon: #43d9f2;
+        --red-accent: #f24343;
 
-        /* Winner Popup Animation */
-        #winner-popup {
-            transform: translateY(-150%);
-            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        #winner-popup.show {
-            transform: translateY(0);
-        }
+        /* Timer specific */
+        --timer-teal-dark: #005f73;
+        --timer-teal-light: #0a9396;
+        --timer-red: #ae2012;
+        --circle-size: 200px;
+      }
 
-        /* Leaderboard sliding animations */
-        .lb-entry {
-            animation: slideInRight 0.5s forwards ease-out;
-            opacity: 0;
-            transform: translateX(50px);
-        }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-        @keyframes slideInRight {
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
+      body {
+        background-color: transparent;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        width: 100vw;
+        height: 100vh;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        position: relative;
+      }
 
-        /* Custom Scrollbar for Guesses */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-        }
+      #confetti {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 9999;
+      }
 
-        /* Confetti Canvas */
-        #confetti {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 10;
+      /* Layout */
+      .layout-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 20px;
+        box-sizing: border-box;
+        pointer-events: none;
+      }
+
+      .left-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        pointer-events: auto;
+        width: 350px;
+      }
+
+      .center-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        flex-grow: 1;
+        padding-top: 50px;
+        pointer-events: auto;
+        position: relative; /* For announcement box absolute positioning */
+      }
+
+      .right-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-end;
+        pointer-events: auto;
+        width: 250px; /* enough space for timer */
+      }
+
+      /* --- LEADERBOARD --- */
+      /* Leaderboard Widget Container */
+      .leaderboard-widget {
+        background: var(--teal-dark);
+        border: 4px solid var(--cyan);
+        border-radius: 16px;
+        min-width: 350px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Header */
+      .header {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px 20px;
+        border-bottom: 2px solid var(--cyan);
+        text-align: center;
+      }
+
+      .header h2 {
+        color: var(--yellow);
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px var(--orange);
+      }
+
+      /* Leaderboard List */
+      .list-container {
+        padding: 15px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 100px;
+      }
+
+      /* Individual Rows */
+      .score-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(236, 254, 255, 0.05); /* cyan-light with opacity */
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        transition: transform 0.2s ease;
+      }
+
+      .username {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--cyan-light);
+      }
+
+      .score-value {
+        color: var(--cyan-neon);
+        font-weight: 900;
+        text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); /* cyan with opacity */
+      }
+
+      /* Special styling for top 3 using Sunny Pond colors */
+      .score-row.rank-1 {
+        background: linear-gradient(
+          90deg,
+          rgba(250, 204, 21, 0.2),
+          transparent
+        ); /* yellow */
+        border-left: 5px solid var(--yellow);
+      }
+      .score-row.rank-1 .username {
+        color: var(--yellow);
+      }
+
+      .score-row.rank-2 {
+        background: linear-gradient(
+          90deg,
+          rgba(236, 254, 255, 0.2),
+          transparent
+        ); /* cyan-light */
+        border-left: 5px solid var(--cyan-light);
+      }
+      .score-row.rank-2 .username {
+        color: var(--cyan-light);
+      }
+
+      .score-row.rank-3 {
+        background: linear-gradient(
+          90deg,
+          rgba(234, 88, 12, 0.2),
+          transparent
+        ); /* orange */
+        border-left: 5px solid var(--orange);
+      }
+      .score-row.rank-3 .username {
+        color: var(--orange);
+      }
+
+      /* Empty state */
+      .empty-state {
+        text-align: center;
+        color: var(--cyan-light);
+        opacity: 0.7;
+        font-style: italic;
+        padding: 20px 0;
+        font-size: 1rem;
+      }
+
+      /* Hidden Simulation Panel - Hide in OBS with CSS */
+
+      button {
+        background: var(--orange);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+      }
+
+      button:hover {
+        background: var(--teal-bright);
+        color: var(--teal-dark);
+      }
+
+      /* Connection indicator */
+      #connection-status {
+        font-size: 0.8rem;
+        text-align: center;
+        font-weight: bold;
+      }
+      .connected {
+        color: var(--teal-dark);
+      }
+      .disconnected {
+        color: var(--red-accent);
+      }
+
+      /* --- CLUE WIDGET --- */
+      .clue-widget {
+        position: relative;
+        background: transparent; /* Inside is fully transparent */
+        border: 12px solid #1a1a1a; /* iPad Bezel */
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        width: 600px;
+        min-height: 350px;
+        display: flex;
+        flex-direction: column;
+
+        /* Entrance Animation */
+        animation: bounceIn 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+      }
+
+      @keyframes bounceIn {
+        0% {
+          opacity: 0;
+          transform: translateY(50px) scale(0.9);
         }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .sender-label {
+        position: absolute;
+        top: -30px; /* Docked right above the top bezel without overlapping */
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(
+          180deg,
+          #ffffff 0%,
+          #e0e0e0 40%,
+          #ffffff 100%
+        );
+        color: var(--teal-dark);
+        padding: 5px 25px 5px 15px;
+        border-radius: 4px 60px 60px 4px; /* Flat back left, sharp tapered nib right */
+        font-weight: 900;
+        font-size: 1.1rem;
+        box-shadow:
+          inset 0 -2px 5px rgba(0, 0, 0, 0.2),
+          inset 0 2px 5px rgba(255, 255, 255, 0.8),
+          0 5px 10px rgba(0, 0, 0, 0.3);
+        border-left: 8px solid #ccc; /* Silver band detail */
+        border-right: 2px solid #ddd; /* Nib detail */
+        white-space: nowrap;
+        width: 450px; /* Long enough to fit max length Twitch usernames */
+        text-align: center;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        z-index: 10;
+      }
+
+      .clue-title {
+        background: rgba(17, 94, 89, 0.95); /* Deep Teal for Inactive */
+        color: #ffffff; /* White text for Inactive */
+        font-size: 1.2rem;
+        font-weight: 800;
+        text-align: center;
+        padding: 12px;
+        border-bottom: 2px solid var(--teal-dark);
+        border-radius: 12px 12px 0 0;
+        letter-spacing: 1px;
+        text-shadow: none;
+        transition: all 0.3s ease;
+      }
+
+      .clue-title.waiting {
+        background: var(--yellow);
+        color: var(--teal-dark);
+        text-shadow: none;
+      }
+
+      .clue-title.active {
+        background: var(--orange);
+        color: var(--cyan-light);
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+      }
+
+      .clue-text {
+        color: #ffffff;
+        font-size: 3rem;
+        font-weight: 900;
+        line-height: 1.2;
+        text-shadow:
+          2px 2px 0 #000,
+          -1px -1px 0 #000,
+          0 -1px 0 #000,
+          1px -1px 0 #000,
+          -1px 1px 0 #000,
+          1px 1px 0 #000,
+          0 0 20px var(--teal-bright);
+        text-align: center;
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .control-group {
+        margin-bottom: 10px;
+      }
+      label {
+        font-weight: bold;
+        margin-right: 10px;
+      }
+      input,
+      select {
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      button {
+        background: var(--orange);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+      }
+      button:hover {
+        background: var(--teal-bright);
+      }
+
+      #connection-status {
+        font-size: 0.8rem;
+        font-weight: bold;
+        margin-bottom: 8px;
+        text-align: center;
+      }
+      .connected {
+        color: var(--teal-dark);
+      }
+      .disconnected {
+        color: var(--red-accent);
+      }
+
+      /* --- ANNOUNCEMENT --- */
+      /* Announcement Container */
+      #announcement-box {
+        background: var(--teal-dark);
+        border: 4px solid var(--cyan);
+        border-radius: 16px;
+        padding: 40px 60px;
+        text-align: center;
+        box-shadow:
+          0 0 40px rgba(6, 182, 212, 0.5),
+          inset 0 0 20px rgba(0, 0, 0, 0.8);
+
+        /* Flexible width and text wrapping to prevent overflow */
+        width: 80vw;
+        max-width: 800px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+
+        /* Position perfectly in the center */
+        position: absolute;
+        top: 50%;
+        left: 50%;
+
+        /* Hidden state by default - incorporate -50% translation for centering */
+        opacity: 0;
+        transform: translate(-50%, -30%) scale(0.8);
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        pointer-events: none;
+      }
+
+      /* Visible state triggered by JavaScript */
+      #announcement-box.show {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      /* Typography */
+      #winner-text {
+        /* Responsive font size so it shrinks before breaking */
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        color: var(--yellow);
+        text-shadow:
+          3px 3px 0 #000,
+          -1px -1px 0 #000,
+          0 -1px 0 #000,
+          1px -1px 0 #000,
+          -1px 1px 0 #000,
+          1px 1px 0 #000,
+          0 0 20px var(--orange);
+        line-height: 1.2;
+      }
+
+      #answer-text {
+        /* Responsive font size */
+        font-size: clamp(1.2rem, 3.5vw, 2rem);
+        font-weight: 700;
+        margin-top: 15px;
+        color: var(--cyan-light);
+        text-shadow:
+          2px 2px 0 #000,
+          -1px -1px 0 #000,
+          0 -1px 0 #000,
+          1px -1px 0 #000,
+          -1px 1px 0 #000,
+          1px 1px 0 #000,
+          0 0 15px var(--cyan-neon);
+      }
+
+      /* Hidden Simulation Panel - Hide in OBS with CSS */
+
+      button {
+        background: var(--orange);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+        font-size: 1.1rem;
+      }
+
+      button:hover {
+        background: var(--teal-bright);
+        color: var(--teal-dark);
+      }
+
+      /* Connection indicator */
+      #connection-status {
+        font-size: 0.8rem;
+        text-align: center;
+        font-weight: bold;
+      }
+      .connected {
+        color: var(--teal-dark);
+      }
+      .disconnected {
+        color: var(--red-accent);
+      }
+
+      /* Override Announcement Positioning for integrated layout */
+      #announcement-box {
+        /* Position relative to center-panel instead of screen */
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -30%) scale(0.8);
+        z-index: 50; /* Ensure it's above clue */
+      }
+
+      /* --- TIMER --- */
+      /* Sunny Pond Color Palette */
+
+      /* Timer Container */
+      .timer-widget {
+        position: relative;
+        width: var(--circle-size);
+        height: var(--circle-size);
+        background: linear-gradient(
+          135deg,
+          var(--teal-dark),
+          var(--teal-light)
+        );
+        border-radius: 50%;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 4px solid var(--teal-dark);
+        transition: all 0.3s ease;
+      }
+
+      /* SVG Progress Ring (Hidden by default until <= 60s) */
+      .progress-ring {
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        width: calc(100% + 8px);
+        height: calc(100% + 8px);
+        transform: rotate(-90deg);
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+      }
+
+      .progress-ring.visible {
+        opacity: 1;
+      }
+
+      .progress-ring__circle {
+        fill: transparent;
+        stroke: var(--orange);
+        stroke-width: 8;
+        stroke-linecap: round;
+        transition:
+          stroke-dashoffset 1s linear,
+          stroke 0.3s ease;
+      }
+
+      /* Time Display Text */
+      .time-display {
+        font-weight: 800;
+        text-align: center;
+        line-height: 1;
+        z-index: 10;
+        transition: color 0.3s ease;
+      }
+
+      /* State: Standard ( > 60 seconds) */
+      .state-standard .time-display {
+        font-size: 3rem; /* text-4xl equivalent to fit MM:SS */
+        letter-spacing: 2px;
+      }
+
+      /* State: Stopwatch ( <= 60 seconds) */
+      .state-stopwatch .time-display {
+        font-size: 5rem; /* Massive text for seconds only */
+      }
+
+      .secs-label {
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        opacity: 0;
+        margin-top: -5px;
+        font-weight: bold;
+        z-index: 10;
+      }
+
+      .state-stopwatch .secs-label {
+        opacity: 0.8;
+      }
+
+      /* State: Danger ( <= 10 seconds) */
+      .state-danger .progress-ring__circle {
+        stroke: var(--red);
+      }
+
+      .state-danger .time-display,
+      .state-danger .secs-label {
+        color: var(--red);
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .state-danger {
+        animation: pulse 1s infinite;
+      }
+
+      /* Simulation Control Panel (Hidden in standard OBS dimensions) */
+
+      #control-panel button {
+        background: var(--orange);
+        color: var(--teal-dark);
+        font-weight: bold;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+        transition:
+          background 0.2s ease,
+          transform 0.1s ease;
+      }
+      #control-panel button:hover {
+        background: var(--yellow);
+        transform: scale(1.05);
+      }
+      #control-panel input {
+        padding: 5px;
+        width: 60px;
+        text-align: center;
+        background: var(--teal-light);
+        border: 1px solid var(--yellow);
+        color: white;
+        border-radius: 4px;
+        font-weight: bold;
+      }
     </style>
-</head>
-<body class="w-screen h-screen flex flex-col justify-between p-8 relative">
-
-    <!-- Confetti Layer -->
+  </head>
+  <body>
     <canvas id="confetti"></canvas>
 
-    <!-- Top Right Area: Game State Banner -->
-    <div class="absolute top-10 right-10 z-20">
-        <div id="game-state-banner" class="bg-gray-900/90 backdrop-blur-md border border-gray-700 p-4 rounded-xl shadow-lg flex items-center gap-3 transition-colors duration-500">
-            <div id="game-state-indicator" class="w-3 h-3 rounded-full bg-gray-500 animate-pulse"></div>
-            <h2 id="game-state-text" class="text-xl font-bold uppercase tracking-wide text-gray-300">No Game Active</h2>
+    <div class="layout-container">
+      <!-- Left Panel: Leaderboard -->
+      <div class="left-panel">
+        <div class="leaderboard-widget">
+          <div class="header">
+            <h2>🦆 LEADERBOARD</h2>
+          </div>
+          <div class="list-container" id="leaderboard-list">
+            <div class="empty-state">Waiting for scores...</div>
+          </div>
         </div>
+      </div>
+
+      <!-- Center Panel: Goose Clue Overlay & Announcement -->
+      <div class="center-panel">
+        <div class="clue-widget" id="clueWidget">
+          <div class="sender-label" id="stylusLabel"></div>
+          <div class="clue-title" id="clueTitle"></div>
+          <div class="clue-text" id="clueDisplay"></div>
+        </div>
+
+        <div id="announcement-box">
+          <div id="winner-text"></div>
+          <div id="answer-text"></div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Timer -->
+      <div class="right-panel">
+        <div class="timer-widget state-standard" id="timerWidget">
+          <svg class="progress-ring" id="progressRing">
+            <circle
+              class="progress-ring__circle"
+              id="ringCircle"
+              cx="104"
+              cy="104"
+              r="96"
+            ></circle>
+          </svg>
+          <div class="time-display" id="timeDisplay">00:00</div>
+          <div class="secs-label" id="secsLabel">SECS</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Left Panel: Leaderboard and Live Guesses -->
-    <div class="absolute top-0 left-0 w-1/3 h-full p-8 flex flex-col gap-6 z-20">
-
-        <!-- Top: Leaderboard -->
-        <div class="bg-gray-900/90 backdrop-blur-md border border-gray-700 p-6 rounded-2xl shadow-2xl">
-            <div class="flex items-center gap-3 mb-4 border-b border-gray-700 pb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-400"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
-                <h2 class="text-xl font-bold uppercase tracking-wide">Stream Standings</h2>
-            </div>
-
-            <div id="leaderboard-list" class="flex flex-col gap-3">
-                <div class="text-gray-400 text-sm italic py-2">No winners yet. Guess the word!</div>
-            </div>
-        </div>
-
-        <!-- Bottom: Live Guesses -->
-        <div class="bg-gray-900/90 backdrop-blur-md border border-gray-700 p-6 rounded-2xl shadow-2xl flex-1 flex flex-col overflow-hidden">
-            <div class="flex items-center gap-3 mb-4 border-b border-gray-700 pb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                <h2 class="text-xl font-bold uppercase tracking-wide">Live Guesses</h2>
-            </div>
-            <div id="guesses-list" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2 pr-2">
-                <div class="text-gray-400 text-sm italic py-2" id="guesses-placeholder">Waiting for guesses...</div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Top Area: Winner/Give Up Announcement -->
-    <div class="w-full flex justify-center mt-10 absolute top-10 left-0 z-20">
-        <div id="winner-popup" class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl p-1 shadow-[0_0_40px_rgba(124,58,237,0.5)] flex flex-col items-center">
-            <div id="popup-inner" class="bg-gray-900 rounded-[22px] px-12 py-8 flex flex-col items-center border border-white/10">
-                <h2 id="popup-title" class="text-2xl text-purple-400 font-bold tracking-widest uppercase mb-1">We Have A Winner!</h2>
-                <h1 id="winner-name" class="text-5xl font-black text-white mb-4">Username</h1>
-                <div class="bg-white/10 px-6 py-3 rounded-xl border border-white/20">
-                    <span class="text-gray-300 text-lg">The word was: </span>
-                    <span id="winner-word" class="text-3xl font-bold text-yellow-400 ml-2">WORD</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- We will inject JS here later -->
     <script>
-        // --- 1. GAME LOGIC & LEADERBOARD ---
-        let scores = {};
+      // --- CONFIGURATION ---
+      const WS_URL = "ws://127.0.0.1:8080/";
+      const POLL_INTERVAL_MS = 1500;
+      const REQUEST_ID = "guessing_game_integrated_poll";
 
-        function handleWinner(username, word, points) {
-            document.getElementById('winner-name').innerText = username;
-            document.getElementById('winner-name').style.display = 'block';
-            document.getElementById('winner-word').innerText = word;
-            
-            const popup = document.getElementById('winner-popup');
-            popup.className = "bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl p-1 shadow-[0_0_40px_rgba(124,58,237,0.5)] flex flex-col items-center";
+      // Variable Names
+      const VAR_SCORES = "guessing-game_leaderboard";
+      const VAR_STATE = "guessing-game_state";
+      const VAR_GUEST = "guessing-game_currentGuest";
+      const VAR_CLUE = "guessing-game_gooseClue";
+      const VAR_WINNER = "guessing-game_winner";
+      const VAR_ANSWER = "guessing-game_winningWord";
 
-            document.getElementById('popup-title').innerText = "We Have A Winner!";
-            document.getElementById('popup-title').className = "text-2xl text-purple-400 font-bold tracking-widest uppercase mb-1";
+      const MAX_PLAYERS_TO_SHOW = 5;
 
-            popup.classList.add('show');
-            fireConfetti();
+      // State Tracking
+      let currentScoresString = "";
+      let currentWinner = "";
+      let ws;
+      let pollInterval;
 
-            if(!scores[username]) scores[username] = 0;
-            scores[username] += points;
-            renderLeaderboard();
+      // Timer Variables
+      let timerInterval;
+      let timeRemaining = 0;
+      let totalSeconds = 0;
 
-            setTimeout(() => {
-                popup.classList.remove('show');
-            }, 8000);
+      // --- DOM Elements ---
+      // Leaderboard
+      const lbListContainer = document.getElementById("leaderboard-list");
+
+      // Clue Widget
+      const clueTitle = document.getElementById("clueTitle");
+      const stylusLabel = document.getElementById("stylusLabel");
+      const clueDisplay = document.getElementById("clueDisplay");
+
+      // Announcement
+      const announceBox = document.getElementById("announcement-box");
+      const winnerText = document.getElementById("winner-text");
+      const answerText = document.getElementById("answer-text");
+
+      // Timer
+      const timerWidget = document.getElementById("timerWidget");
+      const timeDisplay = document.getElementById("timeDisplay");
+      const progressRing = document.getElementById("progressRing");
+      const ringCircle = document.getElementById("ringCircle");
+
+      // Confetti
+      const canvas = document.getElementById("confetti");
+      const ctx = canvas.getContext("2d");
+      let particles = [];
+      let animationId;
+
+      // --- INIT TIMER SVG ---
+      const radius = ringCircle.r.baseVal.value;
+      const circumference = radius * 2 * Math.PI;
+      ringCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+      ringCircle.style.strokeDashoffset = circumference;
+
+      // --- CONFETTI LOGIC ---
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      function fireConfetti() {
+        particles = [];
+        const colors = ["#facc15", "#06b6d4", "#2dd4bf", "#ea580c", "#43d9f2"];
+
+        for (let i = 0; i < 150; i++) {
+          particles.push({
+            x: canvas.width / 2,
+            y: -20,
+            r: Math.random() * 6 + 4,
+            dx: Math.random() * 10 - 5,
+            dy: Math.random() * -10 + 2,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            tilt: Math.random() * 10 - 10,
+            tiltAngleInc: Math.random() * 0.07 + 0.05,
+            tiltAngle: 0,
+          });
         }
 
-        function handleGiveUp(word) {
-            document.getElementById('winner-name').style.display = 'none';
-            document.getElementById('winner-word').innerText = word;
+        if (animationId) cancelAnimationFrame(animationId);
+        animateConfetti();
+      }
 
-            const popup = document.getElementById('winner-popup');
-            popup.className = "bg-gradient-to-r from-red-600 to-orange-600 rounded-3xl p-1 shadow-[0_0_40px_rgba(220,38,38,0.5)] flex flex-col items-center";
+      function animateConfetti() {
+        requestAnimationFrame(animateConfetti);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            document.getElementById('popup-title').innerText = "Goose Gave Up!";
-            document.getElementById('popup-title').className = "text-2xl text-red-400 font-bold tracking-widest uppercase mb-1";
+        let active = false;
+        particles.forEach((p) => {
+          p.tiltAngle += p.tiltAngleInc;
+          p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2 + 2;
+          p.x += Math.sin(p.tiltAngle) * 2 + p.dx;
 
-            popup.classList.add('show');
+          if (p.y <= canvas.height) active = true;
 
-            setTimeout(() => {
-                popup.classList.remove('show');
-            }, 8000);
+          ctx.beginPath();
+          ctx.lineWidth = p.r;
+          ctx.strokeStyle = p.color;
+          ctx.moveTo(p.x + p.tilt + p.r, p.y);
+          ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+          ctx.stroke();
+        });
+
+        if (!active) {
+          cancelAnimationFrame(animationId);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      // --- TIMER LOGIC ---
+      function setTimerProgress(percent) {
+        const offset = circumference - (percent / 100) * circumference;
+        ringCircle.style.strokeDashoffset = offset;
+      }
+
+      function updateTimerDisplay() {
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          timeDisplay.innerText = "00";
+          setTimerProgress(0);
+          sendToStreamerBot("timedout");
+          return;
         }
 
-        function handleGuess(user, color, word, isCorrect) {
-            const list = document.getElementById('guesses-list');
-            const placeholder = document.getElementById('guesses-placeholder');
-            if (placeholder) {
-                placeholder.remove();
-            }
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
 
-            const guessRow = document.createElement('div');
+        if (timeRemaining > 60) {
+          timerWidget.className = "timer-widget state-standard";
+          progressRing.classList.remove("visible");
+          timeDisplay.innerText = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+        } else {
+          progressRing.classList.add("visible");
+          timeDisplay.innerText = seconds.toString().padStart(2, "0");
 
-            if (isCorrect) {
-                guessRow.className = "bg-green-600/30 border border-green-400 text-green-300 rounded-lg p-2 shadow-[0_0_15px_rgba(74,222,128,0.3)] animate-pulse";
-            } else {
-                guessRow.className = "bg-white/5 border border-white/5 rounded-lg p-2 break-all";
-            }
+          const percent = (timeRemaining / 60) * 100;
+          setTimerProgress(percent);
 
-            guessRow.innerHTML = `<span class="font-bold" style="color: ${color || '#ffffff'}; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">${user}</span>: <span class="text-gray-200">${word}</span>`;
-            list.appendChild(guessRow);
+          if (timeRemaining <= 10) {
+            timerWidget.className = "timer-widget state-stopwatch state-danger";
+          } else {
+            timerWidget.className = "timer-widget state-stopwatch";
+          }
+        }
+      }
 
-            list.scrollTop = list.scrollHeight;
+      function startTimer(durationMinutes) {
+        clearInterval(timerInterval);
+        totalSeconds = durationMinutes * 60;
+        timeRemaining = totalSeconds;
+
+        updateTimerDisplay();
+
+        timerInterval = setInterval(() => {
+          timeRemaining--;
+          updateTimerDisplay();
+        }, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        timeRemaining = 0;
+        timerWidget.className = "timer-widget state-standard";
+        progressRing.classList.remove("visible");
+        timeDisplay.innerText = "00:00";
+      }
+
+      function sendToStreamerBot(status) {
+        try {
+          const tempWs = new WebSocket(WS_URL);
+          tempWs.onopen = () => {
+            tempWs.send(
+              JSON.stringify({
+                request: "DoAction",
+                action: { name: "Timer Finished" },
+                id: "timer-finished-trigger",
+              }),
+            );
+            tempWs.close();
+          };
+        } catch (e) {
+          console.log(`Action triggered: Timer Finished.`);
+        }
+      }
+
+      // --- LEADERBOARD LOGIC ---
+      function renderLeaderboard(scoresArray) {
+        lbListContainer.innerHTML = "";
+
+        if (scoresArray.length === 0) {
+          lbListContainer.innerHTML =
+            '<div class="empty-state">No scores yet!</div>';
+          return;
         }
 
-        function handleStateChange(state) {
-            const banner = document.getElementById('game-state-banner');
-            const indicator = document.getElementById('game-state-indicator');
-            const text = document.getElementById('game-state-text');
-            const guessesList = document.getElementById('guesses-list');
+        const topPlayers = scoresArray.slice(0, MAX_PLAYERS_TO_SHOW);
 
-            if (state === 'waiting') {
-                indicator.className = "w-3 h-3 rounded-full bg-yellow-400 animate-pulse shadow-[0_0_10px_rgba(250,204,21,0.8)]";
-                text.innerText = "Waiting for Goose...";
-                text.className = "text-xl font-bold uppercase tracking-wide text-yellow-400";
-                banner.className = "bg-gray-900/90 backdrop-blur-md border border-yellow-700/50 p-4 rounded-xl shadow-lg flex items-center gap-3 transition-colors duration-500";
-            } else if (state === 'active') {
-                indicator.className = "w-3 h-3 rounded-full bg-green-400 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.8)]";
-                text.innerText = "Game Active - Guess the Word!";
-                text.className = "text-xl font-bold uppercase tracking-wide text-green-400";
-                banner.className = "bg-gray-900/90 backdrop-blur-md border border-green-700/50 p-4 rounded-xl shadow-lg flex items-center gap-3 transition-colors duration-500";
+        topPlayers.forEach((player, index) => {
+          const rank = index + 1;
+          const row = document.createElement("div");
+          row.className = `score-row rank-${rank}`;
 
-                // Clear guesses list on new game active state
-                guessesList.innerHTML = '<div class="text-gray-400 text-sm italic py-2" id="guesses-placeholder">Waiting for guesses...</div>';
-            } else if (state === 'recap') {
-                indicator.className = "w-3 h-3 rounded-full bg-blue-400 animate-pulse shadow-[0_0_10px_rgba(96,165,250,0.8)]";
-                text.innerText = "Round Recap";
-                text.className = "text-xl font-bold uppercase tracking-wide text-blue-400";
-                banner.className = "bg-gray-900/90 backdrop-blur-md border border-blue-700/50 p-4 rounded-xl shadow-lg flex items-center gap-3 transition-colors duration-500";
-            } else {
-                indicator.className = "w-3 h-3 rounded-full bg-gray-500";
-                text.innerText = "No Game Active";
-                text.className = "text-xl font-bold uppercase tracking-wide text-gray-400";
-                banner.className = "bg-gray-900/90 backdrop-blur-md border border-gray-700 p-4 rounded-xl shadow-lg flex items-center gap-3 transition-colors duration-500";
-            }
-        }
+          let medal = "";
+          if (rank === 1) medal = "🥇";
+          if (rank === 2) medal = "🥈";
+          if (rank === 3) medal = "🥉";
 
-        function renderLeaderboard() {
-            const list = document.getElementById('leaderboard-list');
-            list.innerHTML = '';
-
-            const sortedUsers = Object.entries(scores)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5);
-
-            sortedUsers.forEach((entry, index) => {
-                const row = document.createElement('div');
-                row.className = 'lb-entry flex justify-between items-center bg-white/5 rounded-lg p-3 border border-white/5';
-                row.style.animationDelay = `${index * 0.1}s`; 
-                
-                let rankColors = ['text-yellow-400', 'text-gray-300', 'text-amber-600', 'text-gray-400', 'text-gray-500'];
-                let rankColor = rankColors[index] || 'text-gray-500';
-
-                row.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold ${rankColor} w-4">${index + 1}</span>
-                        <span class="font-semibold">${entry[0]}</span>
+          row.innerHTML = `
+                    <div class="username">
+                        <span>${medal}</span>
+                        <span>${player.user}</span>
                     </div>
-                    <span class="font-bold bg-purple-600/30 text-purple-300 px-3 py-1 rounded-full text-sm">
-                        ${entry[1]} pts
-                    </span>
+                    <div class="score-value">${player.score} pt</div>
                 `;
-                list.appendChild(row);
-            });
+
+          lbListContainer.appendChild(row);
+        });
+      }
+
+      // --- CLUE LOGIC ---
+      function updateClueUI(state, guest, clue) {
+        clueTitle.className = "clue-title";
+        const safeState = state
+          ? String(state).trim().toLowerCase()
+          : "inactive";
+        const safeGuest = guest ? String(guest).trim() : "";
+
+        if (safeState === "inactive") {
+          clueTitle.innerHTML = `Mods: Start game with <span style="color: var(--yellow);">!giveword @user</span>`;
+          stylusLabel.innerHTML = "";
+          clueDisplay.innerHTML = "";
+        } else if (safeState === "waiting") {
+          clueTitle.classList.add("waiting");
+          clueTitle.innerHTML = "Waiting for word...";
+          stylusLabel.innerHTML = `CLUES FROM <span style="color: var(--orange);">${safeGuest}</span>`;
+          clueDisplay.innerHTML = "...";
+        } else if (safeState === "active") {
+          clueTitle.classList.add("active");
+          clueTitle.innerHTML = "Guess ONE-WORD answers in chat!";
+          stylusLabel.innerHTML = `CLUES FROM ${safeGuest}`;
+          clueDisplay.innerHTML = clue ? clue : "...";
+        } else if (safeState === "recap") {
+          clueTitle.classList.add("waiting");
+          clueTitle.innerHTML = "Round Over!";
+          stylusLabel.innerHTML = `CLUES WERE FROM <span style="color: var(--orange);">${safeGuest}</span>`;
+          clueDisplay.innerHTML = clue ? clue : "...";
         }
+      }
 
-        // --- 2. WEBSOCKET CONNECTION TO STREAMER.BOT ---
-        let ws;
-        function connectWS() {
-            // Allows passing a custom IP/Port via URL (e.g. ?ws=192.168.1.5:8080)
-            // Defaults to 127.0.0.1:8080 (the local machine running OBS and Streamer.bot)
-            const urlParams = new URLSearchParams(window.location.search);
-            const wsAddress = urlParams.get('ws') || '127.0.0.1:8080';
-            const wsUrl = `ws://${wsAddress}/`;
+      // --- ANNOUNCEMENT LOGIC ---
+      function showAnnouncement() {
+        announceBox.classList.add("show");
+        fireConfetti();
+      }
 
+      function hideAnnouncement() {
+        announceBox.classList.remove("show");
+      }
+
+      // --- WEBSOCKET HANDLERS ---
+      function requestGlobals() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              request: "GetGlobals",
+              id: REQUEST_ID + "_persisted",
+              persisted: true,
+            }),
+          );
+          ws.send(
+            JSON.stringify({
+              request: "GetGlobals",
+              id: REQUEST_ID + "_nonpersisted",
+              persisted: false,
+            }),
+          );
+        }
+      }
+
+      function processVariables(variablesObj) {
+        // 1. Process Leaderboard
+        if (
+          variablesObj[VAR_SCORES] &&
+          variablesObj[VAR_SCORES].value != null
+        ) {
+          const rawValue = variablesObj[VAR_SCORES].value;
+          const stringifiedValue =
+            typeof rawValue === "object"
+              ? JSON.stringify(rawValue)
+              : String(rawValue);
+
+          if (stringifiedValue !== currentScoresString) {
+            currentScoresString = stringifiedValue;
             try {
-                console.log(`Attempting to connect to Streamer.bot at ${wsUrl}`);
-                ws = new WebSocket(wsUrl);
-                
-                ws.onopen = () => {
-                    console.log('Connected to Streamer.bot!');
-                    ws.send(JSON.stringify({ request: "GetGlobalVariables", id: "init_state", persisted: true }));
-                    // Fetch persisted user variables to populate leaderboard
-                    ws.send(JSON.stringify({ request: "GetUserVariables", id: "init_scores", persisted: true }));
-                };
-                
-                ws.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
+              let parsedData =
+                typeof rawValue === "object" ? rawValue : JSON.parse(rawValue);
+              if (typeof parsedData === "string")
+                parsedData = JSON.parse(parsedData);
 
-                        // Parse GetGlobalVariables response
-                        if(data.id === "init_state" && data.status === "ok" && data.variables) {
-                            // Safely handle both array-of-objects and key-value object structures
-                            const variables = Array.isArray(data.variables) ? data.variables :
-                                              (data.variables.length === undefined && typeof data.variables === 'object') ? Object.entries(data.variables).map(([k, v]) => typeof v === 'object' ? {name: k, ...v} : {name: k, value: v}) : [];
+              let scoresArray = [];
+              if (Array.isArray(parsedData)) {
+                scoresArray = parsedData.map((item) => ({
+                  user: item.username,
+                  score: parseInt(item.score) || 0,
+                }));
+              } else {
+                for (const [user, score] of Object.entries(parsedData)) {
+                  scoresArray.push({ user: user, score: parseInt(score) || 0 });
+                }
+              }
 
-                            variables.forEach(variable => {
-                                if(variable.name === "guessing-game_state") {
-                                    handleStateChange(variable.value);
-                                }
-                            });
-                        }
-                        // Parse GetUserVariables response
-                        else if(data.id === "init_scores" && data.status === "ok" && data.users) {
-                            // Parse nested users object
-                            for (const [username, vars] of Object.entries(data.users)) {
-                                if (vars && typeof vars === 'object') {
-                                    const scoreVar = vars["guessing-game_score"];
-                                    if (scoreVar !== undefined) {
-                                        scores[username] = parseInt(typeof scoreVar === 'object' ? scoreVar.value : scoreVar) || 0;
-                                    }
-                                }
-                            }
-                            renderLeaderboard();
-                        } else if(data.event === "winner") {
-                            handleWinner(data.user, data.word, data.points || 10);
-                        } else if (data.event === "give_up") {
-                            handleGiveUp(data.word);
-                        } else if (data.event === "state_change") {
-                            handleStateChange(data.state);
-                        } else if (data.event === "guess") {
-                            handleGuess(data.user, data.color, data.word, data.isCorrect);
-                        }
-                    } catch(e) { console.error("Error parsing WS message", e); }
-                };
-
-                ws.onclose = () => {
-                    console.log('WS Disconnected. Reconnecting in 3s...');
-                    setTimeout(connectWS, 3000);
-                };
-            } catch (error) {
-                console.warn("WebSocket blocked (Expected in Canvas/Secure Web Previews):", error);
-                console.info("Don't worry! This code will work perfectly when added as a Browser Source in OBS.");
-                
-                // Trigger a demo animation so it can be previewed in the Canvas environment!
-                setTimeout(() => {
-                    handleWinner("DemoUser", "PREVIEW", 100);
-                }, 1500);
+              scoresArray.sort((a, b) => b.score - a.score);
+              renderLeaderboard(scoresArray);
+            } catch (e) {
+              console.error("Failed to parse scores JSON:", e);
             }
+          }
         }
-        
-        connectWS();
 
-        // --- 3. CONFETTI SYSTEM ---
-        const canvas = document.getElementById('confetti');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        let animationId;
+        // 2. Process Clue & State
+        let state = "inactive";
+        let guest = "";
+        let clue = "";
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        if (variablesObj[VAR_STATE]) state = variablesObj[VAR_STATE].value;
+        if (variablesObj[VAR_GUEST]) guest = variablesObj[VAR_GUEST].value;
+        if (variablesObj[VAR_CLUE]) clue = variablesObj[VAR_CLUE].value;
+
+        updateClueUI(state, guest, clue);
+
+        // 3. Process Announcement
+        let newWinner = "";
+        let newAnswer = "";
+        let currentState = String(state).trim().toLowerCase();
+
+        if (variablesObj[VAR_WINNER] && variablesObj[VAR_WINNER].value) {
+          newWinner = String(variablesObj[VAR_WINNER].value).trim();
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        if (variablesObj[VAR_ANSWER] && variablesObj[VAR_ANSWER].value) {
+          newAnswer = String(variablesObj[VAR_ANSWER].value).trim();
+        }
 
-        function fireConfetti() {
-            particles = [];
-            const colors = ['#facc15', '#a855f7', '#3b82f6', '#ec4899', '#22c55e'];
-            
-            for(let i = 0; i < 150; i++) {
-                particles.push({
-                    x: canvas.width / 2, 
-                    y: -20,
-                    r: Math.random() * 6 + 4,
-                    dx: Math.random() * 10 - 5,
-                    dy: Math.random() * -10 + 2,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    tilt: Math.random() * 10 - 10,
-                    tiltAngleInc: (Math.random() * 0.07) + 0.05,
-                    tiltAngle: 0
-                });
+        if (currentState !== "recap") {
+          currentWinner = "";
+          hideAnnouncement();
+        } else if (newWinner !== currentWinner) {
+          currentWinner = newWinner;
+
+          if (currentWinner === "") {
+            hideAnnouncement();
+          } else {
+            winnerText.textContent = `WINNER: ${currentWinner}`;
+
+            if (newAnswer !== "") {
+              answerText.textContent = `ANSWER: ${newAnswer}`;
+              answerText.style.display = "block";
+            } else {
+              answerText.style.display = "none";
             }
 
-            if(animationId) cancelAnimationFrame(animationId);
-            animateConfetti();
+            showAnnouncement();
+          }
         }
+      }
 
-        function animateConfetti() {
-            requestAnimationFrame(animateConfetti);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            let active = false;
-            particles.forEach((p) => {
-                p.tiltAngle += p.tiltAngleInc;
-                p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2 + 2; 
-                p.x += Math.sin(p.tiltAngle) * 2 + p.dx; 
-                
-                if (p.y <= canvas.height) active = true;
+      function connect() {
+        try {
+          ws = new WebSocket(WS_URL);
 
-                ctx.beginPath();
-                ctx.lineWidth = p.r;
-                ctx.strokeStyle = p.color;
-                ctx.moveTo(p.x + p.tilt + p.r, p.y);
-                ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
-                ctx.stroke();
-            });
+          ws.onopen = () => {
+            console.log("Connected to Streamer.bot");
 
-            if(!active) {
-                cancelAnimationFrame(animationId);
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Subscribe to global variable changes for timer events
+            ws.send(
+              JSON.stringify({
+                request: "Subscribe",
+                events: { general: ["Custom"] },
+                id: "integrated-listener",
+              }),
+            );
+
+            requestGlobals();
+            pollInterval = setInterval(requestGlobals, POLL_INTERVAL_MS);
+          };
+
+          ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+
+            // Handle variable polling
+            if (
+              (msg.id === REQUEST_ID + "_persisted" ||
+                msg.id === REQUEST_ID + "_nonpersisted") &&
+              msg.variables
+            ) {
+              processVariables(msg.variables);
             }
+
+            // Handle custom events (Timer)
+            if (
+              msg.event?.source === "General" &&
+              msg.event?.type === "Custom"
+            ) {
+              if (msg.data?.name === "GameStart") {
+                const duration =
+                  msg.data.arguments["guessing-game_timerDuration"] || 2;
+                const secretWord =
+                  msg.data.arguments["guessing-game_secretWord"];
+
+                if (secretWord && secretWord.trim() !== "") {
+                  startTimer(parseInt(duration));
+                }
+              } else if (msg.data?.name === "GameStop") {
+                stopTimer();
+              }
+            }
+          };
+
+          ws.onclose = () => {
+            console.log("Disconnected from Streamer.bot. Reconnecting...");
+            clearInterval(pollInterval);
+            setTimeout(connect, 5000);
+          };
+
+          ws.onerror = (error) => {
+            ws.close();
+          };
+        } catch (error) {
+          console.warn("WebSocket creation failed.", error);
         }
+      }
+
+      // Initialize
+      updateClueUI("inactive", "", "");
+      connect();
     </script>
-</body>
+  </body>
 </html>

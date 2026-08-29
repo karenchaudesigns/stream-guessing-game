@@ -706,6 +706,9 @@
       // State Tracking
       let currentScoresString = "";
       let currentWinner = "";
+      let currentGameState = "inactive";
+      let currentGameGuest = "";
+      let currentGameClue = "";
       let ws;
       let pollInterval;
 
@@ -1013,20 +1016,16 @@
         }
 
         // 2. Process Clue & State
-        let state = "inactive";
-        let guest = "";
-        let clue = "";
+        if (variablesObj[VAR_STATE]) currentGameState = variablesObj[VAR_STATE].value;
+        if (variablesObj[VAR_GUEST]) currentGameGuest = variablesObj[VAR_GUEST].value;
+        if (variablesObj[VAR_CLUE]) currentGameClue = variablesObj[VAR_CLUE].value;
 
-        if (variablesObj[VAR_STATE]) state = variablesObj[VAR_STATE].value;
-        if (variablesObj[VAR_GUEST]) guest = variablesObj[VAR_GUEST].value;
-        if (variablesObj[VAR_CLUE]) clue = variablesObj[VAR_CLUE].value;
-
-        updateClueUI(state, guest, clue);
+        updateClueUI(currentGameState, currentGameGuest, currentGameClue);
 
         // 3. Process Announcement
         let newWinner = "";
         let newAnswer = "";
-        let currentState = String(state).trim().toLowerCase();
+        let currentState = String(currentGameState).trim().toLowerCase();
 
         if (variablesObj[VAR_WINNER] && variablesObj[VAR_WINNER].value) {
           newWinner = String(variablesObj[VAR_WINNER].value).trim();

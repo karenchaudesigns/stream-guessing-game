@@ -185,6 +185,10 @@
         let pollInterval;
         let simulationMode = false;
 
+        let currentGameState = 'inactive';
+        let currentGameGuest = '';
+        let currentGameClue = '';
+
         const clueWidget = document.getElementById('clueWidget');
         const clueTitle = document.getElementById('clueTitle');
         const stylusLabel = document.getElementById('stylusLabel');
@@ -261,15 +265,11 @@
         }
 
         function parseVariables(varsObj) {
-            let state = 'inactive';
-            let guest = '';
-            let clue = '';
+            if (varsObj[VAR_STATE]) currentGameState = varsObj[VAR_STATE].value;
+            if (varsObj[VAR_GUEST]) currentGameGuest = varsObj[VAR_GUEST].value;
+            if (varsObj[VAR_CLUE]) currentGameClue = varsObj[VAR_CLUE].value;
 
-            if (varsObj[VAR_STATE]) state = varsObj[VAR_STATE].value;
-            if (varsObj[VAR_GUEST]) guest = varsObj[VAR_GUEST].value;
-            if (varsObj[VAR_CLUE]) clue = varsObj[VAR_CLUE].value;
-
-            updateUI(state, guest, clue);
+            updateUI(currentGameState, currentGameGuest, currentGameClue);
         }
 
         function applySimulation() {

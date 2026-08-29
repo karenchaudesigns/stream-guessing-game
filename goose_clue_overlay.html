@@ -210,13 +210,13 @@
                 clueTitle.classList.add('waiting');
                 clueTitle.innerHTML = 'Waiting for word...';
                 stylusLabel.innerHTML = `CLUES FROM <span style="color: var(--orange);">${safeGuest}</span>`;
-                clueDisplay.innerHTML = '...';
+                clueDisplay.innerHTML = '';
 
             } else if (safeState === 'active') {
                 clueTitle.classList.add('active');
                 clueTitle.innerHTML = 'Guess ONE-WORD answers in chat!';
                 stylusLabel.innerHTML = `CLUES FROM ${safeGuest}`;
-                clueDisplay.innerHTML = clue ? clue : '...';
+                clueDisplay.innerHTML = clue ? clue : '';
             }
         }
 

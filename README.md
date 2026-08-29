@@ -19,15 +19,23 @@ This project allows a broadcaster to secretly whisper a choice of three random w
 
 ## **Setup Instructions**
 
-### **1. The OBS Overlay**
+### **1. The OBS Overlays**
 
-Since the HTML file connects to Streamer.bot's local WebSocket server (127.0.0.1:8080), you should load the HTML as a "Local File" in OBS. Hosting the overlay on HTTPS (like GitHub Pages) will cause the browser to block the unencrypted connection to the local WebSocket.
+The project includes a unified overlay as well as modular components to fit your stream layout. Since the HTML files connect to Streamer.bot's local WebSocket server (127.0.0.1:8080), you should load them as a "Local File" in OBS. Hosting the overlays on HTTPS (like GitHub Pages) will cause the browser to block the unencrypted connection to the local WebSocket.
 
+Available overlays:
+* `index.html`: A unified overlay containing all game elements.
+* `goose_clue_overlay.html`: An overlay focusing on the current game state, the active guest providing clues, and the clues themselves.
+* `sunny_pond_announcement.html`: An overlay for announcing the game winner and the correct word.
+* `sunny_pond_leaderboard.html`: An overlay specifically for displaying the ongoing leaderboard.
+* `timer_widget.html`: A visual countdown timer for the game.
+
+To set up an overlay:
 1. Clone or download this repository to your computer.
 2. In Streamer.bot, go to the **Servers/Clients** tab -> **WebSocket Server** and ensure "Auto Start" is checked and running on Port 8080.
 3. In OBS, add a new **Browser Source**.
-4. Check the "Local file" box and browse to the `guessing_game_obs_overlay.html` file on your computer.
-5. Set Width to 1920 and Height to 1080 (or match your canvas resolution).
+4. Check the "Local file" box and browse to the desired HTML file (e.g., `index.html`) on your computer.
+5. Set Width to 1920 and Height to 1080 (or adjust according to the specific modular widget size).
 
 ### **2. Streamer.bot Configuration**
 
@@ -62,6 +70,20 @@ You will need to create three separate Actions in Streamer.bot.
 4. **The Game Begins:** The bot confirms the word in the whisper and announces in chat that the game has started.
 5. **The Win:** Chatters guess words wildly. The moment someone types the exact word, the OBS overlay triggers, their name and points are added to the leaderboard, and the secret word is cleared to prevent duplicate winners.
 6. **The Goose Forfeits:** If the clue giver (the Goose) types the secret word in chat, they forfeit the game, no one wins, and the round ends.
+
+## **Global Variables**
+
+The overlays react to the following global variables broadcasted by Streamer.bot over the WebSocket connection:
+
+* `guessing-game_state`: Controls the UI mode (e.g., `inactive`, `waiting`, `active`, `recap`).
+* `guessing-game_currentGuest`: The Twitch username of the person playing / giving clues.
+* `guessing-game_gooseClue`: The current clue given by the guest.
+* `guessing-game_leaderboard`: A JSON string representing the current player scores.
+* `guessing-game_winner`: The Twitch username of the winning guesser.
+* `guessing-game_winningWord`: The word that was successfully guessed.
+* `guessing-game_secretWord`: The active secret word (used internally and to trigger the timer via a custom event).
+* `guessing-game_timerDuration`: The length of the timer in minutes (read from a custom `GameStart` event).
+* `guessing-game_timerStatus`: Status passed back to Streamer.bot when the timer finishes (e.g., `timedout`).
 
 ## **Customization**
 

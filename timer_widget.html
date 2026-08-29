@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duck Duck Guess - Timer Widget</title>
+    <style>
+        /* Sunny Pond Color Palette */
+        :root {
+            --teal-dark: #005f73;
+            --teal-light: #0a9396;
+            --yellow: #e9d8a6;
+            --orange: #ee9b00;
+            --red: #ae2012;
+            --circle-size: 200px;
+        }
+
+        body {
+            background-color: transparent; /* Transparent for OBS */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 20px;
+            color: var(--yellow);
+        }
+
+        /* Timer Container */
+        .timer-widget {
+            position: relative;
+            width: var(--circle-size);
+            height: var(--circle-size);
+            background: linear-gradient(135deg, var(--teal-dark), var(--teal-light));
+            border-radius: 50%;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid var(--teal-dark);
+            transition: all 0.3s ease;
+        }
+
+        /* SVG Progress Ring (Hidden by default until <= 60s) */
+        .progress-ring {
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            width: calc(100% + 8px);
+            height: calc(100% + 8px);
+            transform: rotate(-90deg);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .progress-ring.visible {
+            opacity: 1;
+        }
+
+        .progress-ring__circle {
+            fill: transparent;
+            stroke: var(--orange);
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+        }
+
+        /* Time Display Text */
+        .time-display {
+            font-weight: 800;
+            text-align: center;
+            line-height: 1;
+            z-index: 10;
+            transition: color 0.3s ease;
+        }
+
+        /* State: Standard ( > 60 seconds) */
+        .state-standard .time-display {
+            font-size: 3rem; /* text-4xl equivalent to fit MM:SS */
+            letter-spacing: 2px;
+        }
+
+        /* State: Stopwatch ( <= 60 seconds) */
+        .state-stopwatch .time-display {
+            font-size: 5rem; /* Massive text for seconds only */
+        }
+
+        .secs-label {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0;
+            margin-top: -5px;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        .state-stopwatch .secs-label {
+            opacity: 0.8;
+        }
+
+        /* State: Danger ( <= 10 seconds) */
+        .state-danger .progress-ring__circle {
+            stroke: var(--red);
+        }
+
+        .state-danger .time-display,
+        .state-danger .secs-label {
+            color: var(--red);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .state-danger {
+            animation: pulse 1s infinite;
+        }
+
+        /* Simulation Control Panel (Hidden in standard OBS dimensions) */
+        #control-panel {
+            margin-top: 50px;
+            background: var(--teal-dark);
+            padding: 15px;
+            border-radius: 8px;
+            color: var(--yellow);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-align: center;
+            border: 2px solid var(--teal-light);
+        }
+        #control-panel button {
+            background: var(--orange);
+            color: var(--teal-dark);
+            font-weight: bold;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background 0.2s ease, transform 0.1s ease;
+        }
+        #control-panel button:hover {
+            background: var(--yellow);
+            transform: scale(1.05);
+        }
+        #control-panel input {
+            padding: 5px;
+            width: 60px;
+            text-align: center;
+            background: var(--teal-light);
+            border: 1px solid var(--yellow);
+            color: white;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="timer-widget state-standard" id="timerWidget">
+        <svg class="progress-ring" id="progressRing">
+            <circle class="progress-ring__circle" id="ringCircle" cx="104" cy="104" r="96"></circle>
+        </svg>
+        <div class="time-display" id="timeDisplay">00:00</div>
+        <div class="secs-label" id="secsLabel">SECS</div>
+    </div>
+
+    <!-- Hidden in OBS Control Panel -->
+    <div id="control-panel">
+        <strong>Simulation Panel (Hides in OBS)</strong><br><br>
+        <label>Minutes:</label>
+        <input type="number" id="simMinutes" value="2" min="1"><br>
+        <button onclick="startSimulation()">Start Game (Set Secret Word)</button>
+        <button onclick="stopTimer()">Stop/Reset</button>
+        <button onclick="document.getElementById('control-panel').style.display='none'">Hide Panel</button>
+    </div>
+
+    <script>
+        // --- Timer Logic ---
+        const timerWidget = document.getElementById('timerWidget');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const progressRing = document.getElementById('progressRing');
+        const ringCircle = document.getElementById('ringCircle');
+
+        let timerInterval;
+        let timeRemaining = 0;
+        let totalSeconds = 0;
+
+        // Setup SVG Circle for Progress Ring
+        const radius = ringCircle.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        ringCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+        ringCircle.style.strokeDashoffset = circumference;
+
+        function setProgress(percent) {
+            const offset = circumference - percent / 100 * circumference;
+            ringCircle.style.strokeDashoffset = offset;
+        }
+
+        function updateTimerDisplay() {
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                timeDisplay.innerText = "00";
+                setProgress(0);
+                // Notify Streamer.bot that time is up
+                sendToStreamerBot("timedout");
+                return;
+            }
+
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+
+            if (timeRemaining > 60) {
+                // > 1 Minute: Standard Mode (MM:SS)
+                timerWidget.className = 'timer-widget state-standard';
+                progressRing.classList.remove('visible');
+                timeDisplay.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                // <= 1 Minute: Stopwatch Mode (SS)
+                progressRing.classList.add('visible');
+                timeDisplay.innerText = seconds.toString().padStart(2, '0');
+
+                // Calculate percentage based on 60 seconds total for the ring
+                const percent = (timeRemaining / 60) * 100;
+                setProgress(percent);
+
+                if (timeRemaining <= 10) {
+                    timerWidget.className = 'timer-widget state-stopwatch state-danger';
+                } else {
+                    timerWidget.className = 'timer-widget state-stopwatch';
+                }
+            }
+        }
+
+        function startTimer(durationMinutes) {
+            clearInterval(timerInterval);
+            totalSeconds = durationMinutes * 60;
+            timeRemaining = totalSeconds;
+
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timeRemaining = 0;
+            timerWidget.className = 'timer-widget state-standard';
+            progressRing.classList.remove('visible');
+            timeDisplay.innerText = "00:00";
+        }
+
+        // --- Streamer.bot WebSocket Logic ---
+        function connectStreamerBot() {
+            try {
+                const ws = new WebSocket('ws://127.0.0.1:8080/');
+
+                ws.onopen = () => {
+                    console.log("Connected to Streamer.bot (Timer)");
+                    // Subscribe to global variable changes
+                    ws.send(JSON.stringify({
+                        request: 'Subscribe',
+                        events: { general: ['Custom'] }, // Adjust based on how you broadcast variable changes
+                        id: 'duck-timer-listener'
+                    }));
+                };
+
+                ws.onmessage = (event) => {
+                    const msg = JSON.parse(event.data);
+
+                    // Listen for the secret word being set to trigger the start
+                    if (msg.event?.source === 'General' && msg.event?.type === 'Custom' && msg.data?.name === 'GameStart') {
+                        // Assuming you pass guessing-game_timerDuration as an argument in a Custom Event named 'GameStart'
+                        const duration = msg.data.arguments['guessing-game_timerDuration'] || 2; // Default 2 mins
+                        const secretWord = msg.data.arguments['guessing-game_secretWord'];
+
+                        if (secretWord && secretWord.trim() !== "") {
+                            startTimer(parseInt(duration));
+                        }
+                    }
+
+                    // Listen for manual stop/reset
+                    if (msg.event?.source === 'General' && msg.event?.type === 'Custom' && msg.data?.name === 'GameStop') {
+                        stopTimer();
+                    }
+                };
+            } catch (e) {
+                console.warn("Streamer.bot WS not found. Running in simulation mode.");
+            }
+        }
+
+        // Function to push state back to Streamer.bot
+        function sendToStreamerBot(status) {
+            try {
+                const ws = new WebSocket('ws://127.0.0.1:8080/');
+                ws.onopen = () => {
+                    ws.send(JSON.stringify({
+                        request: 'DoAction',
+                        action: {
+                            // You would create an action in SB called "Timer Finished" that sets guessing-game_timerStatus to "timedout"
+                            name: 'Timer Finished'
+                        },
+                        id: 'timer-finished-trigger'
+                    }));
+                    ws.close();
+                };
+            } catch (e) {
+                console.log(`[Simulated] Action triggered: Timer Finished. Status set to: ${status}`);
+            }
+        }
+
+        // Initialize connection
+        connectStreamerBot();
+
+        // --- Simulation Panel Functions ---
+        function startSimulation() {
+            const mins = document.getElementById('simMinutes').value;
+            startTimer(mins);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Goose Clue Overlay</title>
+    <style>
+        :root {
+            /* Sunny Pond Palette */
+            --cyan-light: #ecfeff;
+            --cyan: #06b6d4;
+            --teal-bright: #2dd4bf;
+            --teal-dark: #115e59;
+            --yellow: #facc15;
+            --orange: #ea580c;
+            --cyan-neon: #43d9f2;
+            --red-accent: #f24343;
+        }
+
+        body {
+            background-color: transparent; /* Transparent for OBS */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px; /* Leave room for stylus to clear top edge */
+        }
+        
+        .clue-widget {
+            position: relative;
+            background: transparent; /* Inside is fully transparent */
+            border: 12px solid #1a1a1a; /* iPad Bezel */
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 600px;
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            
+            /* Entrance Animation */
+            animation: bounceIn 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: translateY(50px) scale(0.9); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .sender-label {
+            position: absolute;
+            top: -30px; /* Docked right above the top bezel without overlapping */
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, #ffffff 0%, #e0e0e0 40%, #ffffff 100%);
+            color: var(--teal-dark);
+            padding: 5px 25px 5px 15px;
+            border-radius: 4px 60px 60px 4px; /* Flat back left, sharp tapered nib right */
+            font-weight: 900;
+            font-size: 1.1rem;
+            box-shadow: 
+                inset 0 -2px 5px rgba(0,0,0,0.2), 
+                inset 0 2px 5px rgba(255,255,255,0.8),
+                0 5px 10px rgba(0,0,0,0.3);
+            border-left: 8px solid #ccc; /* Silver band detail */
+            border-right: 2px solid #ddd; /* Nib detail */
+            white-space: nowrap;
+            width: 450px; /* Long enough to fit max length Twitch usernames */
+            text-align: center;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+
+        .clue-title {
+            background: rgba(17, 94, 89, 0.95); /* Deep Teal for Inactive */
+            color: #ffffff; /* White text for Inactive */
+            font-size: 1.2rem;
+            font-weight: 800;
+            text-align: center;
+            padding: 12px;
+            border-bottom: 2px solid var(--teal-dark);
+            border-radius: 12px 12px 0 0; 
+            letter-spacing: 1px;
+            text-shadow: none;
+            transition: all 0.3s ease;
+        }
+
+        .clue-title.waiting {
+            background: var(--yellow);
+            color: var(--teal-dark);
+            text-shadow: none;
+        }
+
+        .clue-title.active {
+            background: var(--orange);
+            color: var(--cyan-light);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+        }
+
+        .clue-text {
+            color: #ffffff;
+            font-size: 3rem;
+            font-weight: 900;
+            line-height: 1.2;
+            text-shadow: 
+                2px 2px 0 #000,
+                -1px -1px 0 #000,
+                0 -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000,
+                0 0 20px var(--teal-bright);
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #control-panel {
+            margin-top: 40px;
+            background: var(--cyan-light);
+            padding: 15px;
+            border-radius: 10px;
+            color: #333;
+            font-size: 14px;
+            border: 2px solid var(--orange);
+            width: 450px;
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+        }
+        label { font-weight: bold; margin-right: 10px; }
+        input, select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box;}
+        button { background: var(--orange); color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;}
+        button:hover { background: var(--teal-bright); }
+        
+        #connection-status {
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .connected { color: var(--teal-dark); }
+        .disconnected { color: var(--red-accent); }
+    </style>
+</head>
+<body>
+
+    <div class="clue-widget" id="clueWidget">
+        <div class="sender-label" id="stylusLabel"></div>
+        <div class="clue-title" id="clueTitle"></div>
+        <div class="clue-text" id="clueDisplay"></div>
+    </div>
+
+    <div id="control-panel">
+        <div id="connection-status" class="disconnected">WS Disconnected</div>
+        <div class="control-group">
+            <label>Game State:</label>
+            <select id="simState">
+                <option value="inactive">Inactive</option>
+                <option value="waiting">Waiting (Guest picked)</option>
+                <option value="active">Active (Guessing phase)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Goose Name:</label>
+            <input type="text" id="simGuest" placeholder="e.g. KarenChauDesigns123456789">
+        </div>
+        <button onclick="applySimulation()">Trigger Simulation</button>
+    </div>
+
+    <script>
+        const WS_URL = 'ws://127.0.0.1:8080/';
+        const POLL_INTERVAL_MS = 1500;
+        const REQUEST_ID = 'goose_clue_overlay_poll';
+
+        const VAR_STATE = 'guessing-game_state';
+        const VAR_GUEST = 'guessing-game_currentGuest';
+        const VAR_CLUE = 'guessing-game_gooseClue';
+
+        let ws;
+        let pollInterval;
+        let simulationMode = false;
+
+        const clueWidget = document.getElementById('clueWidget');
+        const clueTitle = document.getElementById('clueTitle');
+        const stylusLabel = document.getElementById('stylusLabel');
+        const clueDisplay = document.getElementById('clueDisplay');
+        const connStatus = document.getElementById('connection-status');
+
+        // Main function to update UI based on variables
+        function updateUI(state, guest, clue) {
+            clueTitle.className = 'clue-title';
+            const safeState = state ? String(state).trim().toLowerCase() : 'inactive';
+            const safeGuest = guest ? String(guest).trim() : '';
+
+            if (safeState === 'inactive') {
+                clueTitle.innerHTML = `Mods: Start game with <span style="color: var(--yellow);">!giveword @user</span>`;
+                stylusLabel.innerHTML = ''; // Blank stylus text when inactive, but pencil remains docked
+                clueDisplay.innerHTML = ''; // Interior of iPad remains fully transparent
+
+            } else if (safeState === 'waiting') {
+                clueTitle.classList.add('waiting');
+                clueTitle.innerHTML = 'Waiting for word...';
+                stylusLabel.innerHTML = `CLUES FROM <span style="color: var(--orange);">${safeGuest}</span>`;
+                clueDisplay.innerHTML = '...';
+
+            } else if (safeState === 'active') {
+                clueTitle.classList.add('active');
+                clueTitle.innerHTML = 'Guess ONE-WORD answers in chat!';
+                stylusLabel.innerHTML = `CLUES FROM ${safeGuest}`;
+                clueDisplay.innerHTML = clue ? clue : '...';
+            }
+        }
+
+        function connect() {
+            if (simulationMode) return;
+            
+            try {
+                ws = new WebSocket(WS_URL);
+                
+                ws.onopen = () => {
+                    connStatus.textContent = 'Connected to Streamer.bot';
+                    connStatus.className = 'connected';
+                    requestGlobals();
+                    pollInterval = setInterval(requestGlobals, POLL_INTERVAL_MS);
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if ((data.id === REQUEST_ID + '_persisted' || data.id === REQUEST_ID + '_nonpersisted') && data.variables) {
+                        parseVariables(data.variables);
+                    }
+                };
+
+                ws.onclose = () => {
+                    connStatus.textContent = 'Disconnected';
+                    connStatus.className = 'disconnected';
+                    clearInterval(pollInterval);
+                    if (!simulationMode) {
+                        setTimeout(connect, 5000);
+                    }
+                };
+
+                ws.onerror = () => {
+                    ws.close();
+                };
+            } catch (error) {
+                console.warn("WebSocket connection failed.");
+            }
+        }
+
+        function requestGlobals() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ request: "GetGlobals", id: REQUEST_ID + '_persisted', persisted: true }));
+                ws.send(JSON.stringify({ request: "GetGlobals", id: REQUEST_ID + '_nonpersisted', persisted: false }));
+            }
+        }
+
+        function parseVariables(varsObj) {
+            let state = 'inactive';
+            let guest = '';
+            let clue = '';
+
+            if (varsObj[VAR_STATE]) state = varsObj[VAR_STATE].value;
+            if (varsObj[VAR_GUEST]) guest = varsObj[VAR_GUEST].value;
+            if (varsObj[VAR_CLUE]) clue = varsObj[VAR_CLUE].value;
+
+            updateUI(state, guest, clue);
+        }
+
+        function applySimulation() {
+            simulationMode = true;
+            connStatus.textContent = 'Simulation Mode Active';
+            connStatus.className = 'connected';
+            if (ws) { ws.onclose = null; ws.close(); }
+            clearInterval(pollInterval);
+
+            const simState = document.getElementById('simState').value;
+            const simGuest = document.getElementById('simGuest').value;
+            
+            let simClue = '';
+            if (simState === 'active') {
+                simClue = 'QUACK'; 
+            }
+            
+            updateUI(simState, simGuest, simClue);
+        }
+
+        // Initialize state on load
+        updateUI('inactive', '', '');
+
+        // Start polling connection
+        connect();
+    </script>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guessing Game Announcement</title>
+    <style>
+        :root {
+            /* Sunny Pond Palette */
+            --cyan-light: #ecfeff;
+            --cyan: #06b6d4;
+            --teal-bright: #2dd4bf;
+            --teal-dark: #115e59;
+            --yellow: #facc15;
+            --orange: #ea580c;
+            --cyan-neon: #43d9f2;
+            --red-accent: #f24343;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: transparent; /* Essential for OBS */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--cyan-light);
+            overflow: hidden;
+            /* Center the announcement perfectly on the screen */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            gap: 40px;
+        }
+
+        /* Announcement Container */
+        #announcement-box {
+            background: var(--teal-dark);
+            border: 4px solid var(--cyan);
+            border-radius: 16px;
+            padding: 40px 60px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.8);
+            
+            /* Flexible width and text wrapping to prevent overflow */
+            width: 80vw;
+            max-width: 800px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            
+            /* Position perfectly in the center */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            
+            /* Hidden state by default - incorporate -50% translation for centering */
+            opacity: 0;
+            transform: translate(-50%, -30%) scale(0.8);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+
+        /* Visible state triggered by JavaScript */
+        #announcement-box.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* Typography */
+        #winner-text {
+            /* Responsive font size so it shrinks before breaking */
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--yellow);
+            text-shadow: 
+                3px 3px 0 #000,
+                -1px -1px 0 #000,
+                0 -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000,
+                0 0 20px var(--orange);
+            line-height: 1.2;
+        }
+
+        #answer-text {
+            /* Responsive font size */
+            font-size: clamp(1.2rem, 3.5vw, 2rem);
+            font-weight: 700;
+            margin-top: 15px;
+            color: var(--cyan-light);
+            text-shadow: 
+                2px 2px 0 #000,
+                -1px -1px 0 #000,
+                0 -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000,
+                0 0 15px var(--cyan-neon);
+        }
+
+        /* Hidden Simulation Panel - Hide in OBS with CSS */
+        #control-panel {
+            background: var(--cyan-light);
+            padding: 15px;
+            border-radius: 10px;
+            color: #333;
+            font-size: 14px;
+            border: 2px solid var(--orange);
+            min-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            
+            /* Positioned at the bottom for testing */
+            position: absolute;
+            bottom: 20px;
+            z-index: 10;
+        }
+        
+        .sim-header {
+            font-weight: bold;
+            color: var(--teal-dark);
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        button {
+            background: var(--orange);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            font-size: 1.1rem;
+        }
+
+        button:hover {
+            background: var(--teal-bright);
+            color: var(--teal-dark);
+        }
+
+        /* Connection indicator */
+        #connection-status {
+            font-size: 0.8rem;
+            text-align: center;
+            font-weight: bold;
+        }
+        .connected { color: var(--teal-dark); }
+        .disconnected { color: var(--red-accent); }
+
+    </style>
+</head>
+<body>
+
+    <div id="announcement-box">
+        <div id="winner-text"></div>
+        <div id="answer-text"></div>
+    </div>
+
+    <!-- Simulation Panel for Browser Testing -->
+    <div id="control-panel">
+        <div class="sim-header">Browser Simulation Panel</div>
+        <div id="connection-status" class="disconnected">WS Disconnected</div>
+        <button onclick="startMockPreview()">Trigger Winner Alert</button>
+        <div style="font-size: 0.7rem; text-align: center; opacity: 0.8; margin-top: 5px;">
+            Hide in OBS Custom CSS: <br> <code>#control-panel { display: none !important; }</code>
+        </div>
+    </div>
+
+    <script>
+        const WS_URL = 'ws://127.0.0.1:8080/';
+        const POLL_INTERVAL_MS = 1000; 
+        const REQUEST_ID = 'guessing_game_announce_poll';
+
+        const VAR_WINNER = 'guessing-game_winner'; 
+        const VAR_ANSWER = 'guessing-game_winningWord'; 
+        const VAR_STATE = 'guessing-game_state'; 
+
+        let ws;
+        let pollInterval;
+        let currentWinner = ""; 
+        let mockIntervalActive = false;
+        
+        const announceBox = document.getElementById('announcement-box');
+        const winnerText = document.getElementById('winner-text');
+        const answerText = document.getElementById('answer-text');
+        const connStatus = document.getElementById('connection-status');
+
+        function connect() {
+            try {
+                ws = new WebSocket(WS_URL);
+
+                ws.onopen = () => {
+                    connStatus.textContent = 'Connected to Streamer.bot';
+                    connStatus.className = 'connected';
+                    requestGlobals();
+                    pollInterval = setInterval(requestGlobals, POLL_INTERVAL_MS);
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.id === REQUEST_ID && data.variables) {
+                        checkAnnouncement(data.variables);
+                    }
+                };
+
+                ws.onclose = () => {
+                    connStatus.textContent = 'Disconnected';
+                    connStatus.className = 'disconnected';
+                    clearInterval(pollInterval);
+                    hideAnnouncement(); 
+                    
+                    if (!mockIntervalActive) {
+                        setTimeout(connect, 5000);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    ws.close(); 
+                };
+            } catch (error) {
+                console.warn("WebSocket creation failed.");
+            }
+        }
+
+        function requestGlobals() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const request = {
+                    request: "GetGlobals",
+                    id: REQUEST_ID,
+                    persisted: true 
+                };
+                ws.send(JSON.stringify(request));
+            }
+        }
+
+        function checkAnnouncement(variablesObj) {
+            let currentState = "";
+            let newWinner = "";
+            let newAnswer = "";
+
+            if (variablesObj[VAR_STATE] && variablesObj[VAR_STATE].value) {
+                currentState = String(variablesObj[VAR_STATE].value).trim().toLowerCase();
+            }
+            if (variablesObj[VAR_WINNER] && variablesObj[VAR_WINNER].value) {
+                newWinner = String(variablesObj[VAR_WINNER].value).trim();
+            }
+            if (variablesObj[VAR_ANSWER] && variablesObj[VAR_ANSWER].value) {
+                newAnswer = String(variablesObj[VAR_ANSWER].value).trim();
+            }
+
+            // Hide immediately if state is NOT recap
+            if (currentState !== 'recap') {
+                currentWinner = "";
+                hideAnnouncement();
+                return;
+            }
+
+            // If state is recap, update and show if winner exists
+            if (newWinner !== currentWinner) {
+                currentWinner = newWinner;
+                
+                if (currentWinner === "") {
+                    hideAnnouncement();
+                } else {
+                    winnerText.textContent = `WINNER: ${currentWinner}`;
+                    
+                    if (newAnswer !== "") {
+                        answerText.textContent = `ANSWER: ${newAnswer}`;
+                        answerText.style.display = 'block';
+                    } else {
+                        answerText.style.display = 'none';
+                    }
+                    
+                    showAnnouncement();
+                }
+            }
+        }
+
+        function showAnnouncement() {
+            announceBox.classList.add('show');
+        }
+
+        function hideAnnouncement() {
+            announceBox.classList.remove('show');
+        }
+
+        function startMockPreview() {
+            mockIntervalActive = true;
+            connStatus.textContent = 'Simulation Mode Active';
+            connStatus.className = 'connected';
+            
+            if (ws) { ws.onclose = null; ws.close(); }
+            
+            currentWinner = "";
+            hideAnnouncement();
+
+            setTimeout(() => {
+                const mockVars = {};
+                
+                const names = ["DuckFan99", "QuackMaster", "PondSkimmer"];
+                const words = ["BREAD", "FEATHERS", "WADDLE"];
+                const randomName = names[Math.floor(Math.random() * names.length)];
+                const randomWord = words[Math.floor(Math.random() * words.length)];
+                
+                mockVars[VAR_WINNER] = { value: randomName };
+                mockVars[VAR_ANSWER] = { value: randomWord };
+                mockVars[VAR_STATE] = { value: 'recap' }; 
+                
+                checkAnnouncement(mockVars);
+                
+                // Hide automatically after 4 seconds to simulate changing state out of recap
+                setTimeout(() => {
+                    mockVars[VAR_STATE] = { value: 'inactive' };
+                    checkAnnouncement(mockVars);
+                }, 4000);
+
+            }, 100);
+        }
+
+        connect();
+    </script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guessing Game Leaderboard</title>
+    <style>
+        :root {
+            /* Sunny Pond Palette */
+            --cyan-light: #ecfeff;
+            --cyan: #06b6d4;
+            --teal-bright: #2dd4bf;
+            --teal-dark: #115e59;
+            --yellow: #facc15;
+            --orange: #ea580c;
+            --cyan-neon: #43d9f2;
+            --red-accent: #f24343;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: transparent; /* Essential for OBS */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--cyan-light);
+            overflow: hidden;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        /* Leaderboard Widget Container */
+        .leaderboard-widget {
+            background: var(--teal-dark);
+            border: 4px solid var(--cyan);
+            border-radius: 16px;
+            min-width: 350px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-bottom: 2px solid var(--cyan);
+            text-align: center;
+        }
+
+        .header h2 {
+            color: var(--yellow);
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px var(--orange);
+        }
+
+        /* Leaderboard List */
+        .list-container {
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 100px;
+        }
+
+        /* Individual Rows */
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(236, 254, 255, 0.05); /* cyan-light with opacity */
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease;
+        }
+
+        .username {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--cyan-light);
+        }
+
+        .score-value {
+            color: var(--cyan-neon);
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); /* cyan with opacity */
+        }
+
+        /* Special styling for top 3 using Sunny Pond colors */
+        .score-row.rank-1 { 
+            background: linear-gradient(90deg, rgba(250, 204, 21, 0.2), transparent); /* yellow */
+            border-left: 5px solid var(--yellow); 
+        }
+        .score-row.rank-1 .username { color: var(--yellow); }
+        
+        .score-row.rank-2 { 
+            background: linear-gradient(90deg, rgba(236, 254, 255, 0.2), transparent); /* cyan-light */
+            border-left: 5px solid var(--cyan-light); 
+        }
+        .score-row.rank-2 .username { color: var(--cyan-light); }
+        
+        .score-row.rank-3 { 
+            background: linear-gradient(90deg, rgba(234, 88, 12, 0.2), transparent); /* orange */
+            border-left: 5px solid var(--orange); 
+        }
+        .score-row.rank-3 .username { color: var(--orange); }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            color: var(--cyan-light);
+            opacity: 0.7;
+            font-style: italic;
+            padding: 20px 0;
+            font-size: 1rem;
+        }
+
+        /* Hidden Simulation Panel - Hide in OBS with CSS */
+        #control-panel {
+            background: var(--cyan-light);
+            padding: 15px;
+            border-radius: 10px;
+            color: #333;
+            font-size: 14px;
+            border: 2px solid var(--orange);
+            min-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .sim-header {
+            font-weight: bold;
+            color: var(--teal-dark);
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        button {
+            background: var(--orange);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        button:hover {
+            background: var(--teal-bright);
+            color: var(--teal-dark);
+        }
+
+        /* Connection indicator */
+        #connection-status {
+            font-size: 0.8rem;
+            text-align: center;
+            font-weight: bold;
+        }
+        .connected { color: var(--teal-dark); }
+        .disconnected { color: var(--red-accent); }
+
+    </style>
+</head>
+<body>
+
+    <div class="leaderboard-widget">
+        <div class="header">
+            <h2>🦆 LEADERBOARD</h2>
+        </div>
+        <div class="list-container" id="leaderboard-list">
+            <div class="empty-state">Waiting for scores...</div>
+        </div>
+    </div>
+    
+    <!-- Simulation Panel for Browser Testing -->
+    <div id="control-panel">
+        <div class="sim-header">Browser Simulation Panel</div>
+        <div id="connection-status" class="disconnected">WS Disconnected</div>
+        <button onclick="startMockPreview()">Simulate Live Data</button>
+        <div style="font-size: 0.7rem; text-align: center; opacity: 0.8; margin-top: 5px;">
+            Hide in OBS Custom CSS: <br> <code>#control-panel { display: none !important; }</code>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const WS_URL = 'ws://127.0.0.1:8080/';
+        const POLL_INTERVAL_MS = 2000; // Poll every 2 seconds
+        const REQUEST_ID = 'guessing_game_leaderboard_poll';
+
+        // The name of the global variable containing the bundled JSON object of scores
+        const VAR_SCORES = 'guessing-game_leaderboard'; 
+        const MAX_PLAYERS_TO_SHOW = 5; // Limit the list size so it doesn't run off-screen
+        // ---------------------
+
+        let ws;
+        let pollInterval;
+        let currentScoresString = ""; // Cache to prevent unnecessary DOM updates
+        let mockIntervalActive = false;
+        
+        const listContainer = document.getElementById('leaderboard-list');
+        const connStatus = document.getElementById('connection-status');
+
+        function connect() {
+            try {
+                ws = new WebSocket(WS_URL);
+
+                ws.onopen = () => {
+                    connStatus.textContent = 'Connected to Streamer.bot';
+                    connStatus.className = 'connected';
+                    requestGlobals();
+                    pollInterval = setInterval(requestGlobals, POLL_INTERVAL_MS);
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    
+                    // Listen for both our persisted and non-persisted requests
+                    if ((data.id === REQUEST_ID + '_persisted' || data.id === REQUEST_ID + '_nonpersisted') && data.variables) {
+                        processScores(data.variables);
+                    }
+                };
+
+                ws.onclose = () => {
+                    connStatus.textContent = 'Disconnected';
+                    connStatus.className = 'disconnected';
+                    clearInterval(pollInterval);
+                    // Don't auto-reconnect if they are using the simulation panel
+                    if (!mockIntervalActive) {
+                        setTimeout(connect, 5000);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    // This catches the asynchronous connection refused error when not in OBS
+                    ws.close(); 
+                };
+            } catch (error) {
+                console.warn("WebSocket creation failed.");
+            }
+        }
+
+        function requestGlobals() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ request: "GetGlobals", id: REQUEST_ID + '_persisted', persisted: true }));
+                ws.send(JSON.stringify({ request: "GetGlobals", id: REQUEST_ID + '_nonpersisted', persisted: false }));
+            }
+        }
+
+        function processScores(variablesObj) {
+            if (!variablesObj[VAR_SCORES] || variablesObj[VAR_SCORES].value == null) return; 
+
+            const rawValue = variablesObj[VAR_SCORES].value;
+            const stringifiedValue = typeof rawValue === 'object' ? JSON.stringify(rawValue) : String(rawValue);
+
+            if (stringifiedValue === currentScoresString) return; 
+            currentScoresString = stringifiedValue;
+
+            let parsedData = {};
+            try {
+                if (typeof rawValue === 'object') {
+                    parsedData = rawValue;
+                } else {
+                    parsedData = JSON.parse(rawValue);
+                    if (typeof parsedData === 'string') parsedData = JSON.parse(parsedData);
+                }
+            } catch (e) {
+                console.error("Failed to parse scores JSON:", e);
+                return;
+            }
+
+            let scoresArray = [];
+            if (Array.isArray(parsedData)) {
+                scoresArray = parsedData.map(item => ({ user: item.username, score: parseInt(item.score) || 0 }));
+            } else {
+                for (const [user, score] of Object.entries(parsedData)) {
+                    scoresArray.push({ user: user, score: parseInt(score) || 0 });
+                }
+            }
+
+            scoresArray.sort((a, b) => b.score - a.score);
+            renderLeaderboard(scoresArray);
+        }
+
+        function renderLeaderboard(scoresArray) {
+            listContainer.innerHTML = ''; 
+
+            if (scoresArray.length === 0) {
+                listContainer.innerHTML = '<div class="empty-state">No scores yet!</div>';
+                return;
+            }
+
+            const topPlayers = scoresArray.slice(0, MAX_PLAYERS_TO_SHOW);
+
+            topPlayers.forEach((player, index) => {
+                const rank = index + 1;
+                const row = document.createElement('div');
+                row.className = `score-row rank-${rank}`;
+
+                let medal = '';
+                if (rank === 1) medal = '🥇';
+                if (rank === 2) medal = '🥈';
+                if (rank === 3) medal = '🥉';
+
+                row.innerHTML = `
+                    <div class="username">
+                        <span>${medal}</span>
+                        <span>${player.user}</span>
+                    </div>
+                    <div class="score-value">${player.score} pt</div>
+                `;
+                
+                listContainer.appendChild(row);
+            });
+        }
+
+        function startMockPreview() {
+            if (mockIntervalActive) return; // Prevent multiple intervals
+            mockIntervalActive = true;
+            
+            connStatus.textContent = 'Simulation Mode Active';
+            connStatus.className = 'connected';
+            
+            // Disconnect websocket so it stops trying to reconnect
+            if (ws) { ws.onclose = null; ws.close(); }
+
+            let mockScores = [
+                { username: "MegaDuck", score: 1250 },
+                { username: "GooseMaster", score: 980 },
+                { username: "QuackAttaque", score: 850 },
+                { username: "BreadCrumbz", score: 720 },
+                { username: "SirFeathers", score: 600 },
+                { username: "PondSkater", score: 150 }
+            ];
+
+            let variablesObj = {};
+            variablesObj[VAR_SCORES] = { value: JSON.stringify(mockScores) };
+            processScores(variablesObj);
+
+            setInterval(() => {
+                const randomIdx = Math.floor(Math.random() * mockScores.length);
+                mockScores[randomIdx].score += Math.floor(Math.random() * 200) + 50;
+                variablesObj[VAR_SCORES] = { value: JSON.stringify(mockScores) };
+                processScores(variablesObj);
+            }, 3000);
+        }
+
+        // Start connection on load
+        connect();
+    </script>
+</body>
+</html>

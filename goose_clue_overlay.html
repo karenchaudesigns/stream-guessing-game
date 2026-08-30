@@ -54,7 +54,7 @@
             background: linear-gradient(180deg, #ffffff 0%, #e0e0e0 40%, #ffffff 100%);
             color: var(--teal-dark);
             padding: 5px 25px 5px 15px;
-            border-radius: 4px 60px 60px 4px; /* Flat back left, sharp tapered nib right */
+            border-radius: 4px 100% 100% 4px / 4px 50% 50% 4px; /* Flatter back left, sharp tapered nib right */
             font-weight: 900;
             font-size: 1.1rem;
             box-shadow:
@@ -62,9 +62,13 @@
                 inset 0 2px 5px rgba(255,255,255,0.8),
                 0 5px 10px rgba(0,0,0,0.3);
             border-left: 8px solid #ccc; /* Silver band detail */
-            border-right: 2px solid #ddd; /* Nib detail */
             white-space: nowrap;
             width: 450px; /* Long enough to fit max length Twitch usernames */
+            height: 35px; /* Fixed height so shape doesn't change when empty */
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             text-align: center;
             letter-spacing: 1px;
             text-transform: uppercase;

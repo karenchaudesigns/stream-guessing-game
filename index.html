@@ -258,7 +258,6 @@
         justify-content: center;
         text-align: center;
         letter-spacing: 1px;
-        word-spacing: 0.3em;
         text-transform: uppercase;
         z-index: 10;
       }
@@ -792,7 +791,7 @@
           }
 
           clueTitle.innerHTML = titleHtml;
-          stylusLabel.innerHTML = `CLUES WERE FROM <span style="color: var(--orange);">${safeGuest}</span>`;
+          stylusLabel.innerHTML = `CLUES WERE FROM&nbsp;<span style="color: var(--orange);">${safeGuest}</span>`;
           clueDisplay.innerHTML = clue ? clue : "";
         }
       }

@@ -192,6 +192,12 @@
         let timeRemaining = 0;
         let totalSeconds = 0;
 
+        let currentTimerStatus = "stopped";
+        let currentTimerDuration = 2;
+        let ws;
+        let pollInterval;
+        const REQUEST_ID = 'duck-timer';
+
         // Setup SVG Circle for Progress Ring
         const radius = ringCircle.r.baseVal.value;
         const circumference = radius * 2 * Math.PI;
@@ -260,9 +266,50 @@
         }
 
         // --- Streamer.bot WebSocket Logic ---
+        function requestGlobals() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(
+                    JSON.stringify({
+                        request: "GetGlobals",
+                        id: REQUEST_ID + "_persisted",
+                        persisted: true,
+                    })
+                );
+                ws.send(
+                    JSON.stringify({
+                        request: "GetGlobals",
+                        id: REQUEST_ID + "_nonpersisted",
+                        persisted: false,
+                    })
+                );
+            }
+        }
+
+        function processVariables(variablesObj) {
+            let newTimerStatus = currentTimerStatus;
+            let newTimerDuration = currentTimerDuration;
+
+            if (variablesObj['guessing-game_timerStatus'] && variablesObj['guessing-game_timerStatus'].value != null) {
+                newTimerStatus = String(variablesObj['guessing-game_timerStatus'].value).trim().toLowerCase();
+            }
+            if (variablesObj['guessing-game_timerDuration'] && variablesObj['guessing-game_timerDuration'].value != null) {
+                newTimerDuration = parseInt(variablesObj['guessing-game_timerDuration'].value) || 2;
+            }
+
+            if (newTimerStatus !== currentTimerStatus || newTimerDuration !== currentTimerDuration) {
+                if (newTimerStatus === "running" && currentTimerStatus !== "running") {
+                    startTimer(newTimerDuration);
+                } else if (newTimerStatus === "stopped" && currentTimerStatus !== "stopped") {
+                    stopTimer();
+                }
+                currentTimerStatus = newTimerStatus;
+                currentTimerDuration = newTimerDuration;
+            }
+        }
+
         function connectStreamerBot() {
             try {
-                const ws = new WebSocket('ws://127.0.0.1:8080/');
+                ws = new WebSocket('ws://127.0.0.1:8080/');
 
                 ws.onopen = () => {
                     console.log("Connected to Streamer.bot (Timer)");
@@ -272,10 +319,20 @@
                         events: { general: ['Custom'] }, // Adjust based on how you broadcast variable changes
                         id: 'duck-timer-listener'
                     }));
+
+                    requestGlobals();
+                    pollInterval = setInterval(requestGlobals, 1000);
                 };
 
                 ws.onmessage = (event) => {
                     const msg = JSON.parse(event.data);
+
+                    if (
+                        (msg.id === REQUEST_ID + "_persisted" || msg.id === REQUEST_ID + "_nonpersisted") &&
+                        msg.variables
+                    ) {
+                        processVariables(msg.variables);
+                    }
 
                     // Listen for the secret word being set to trigger the start
                     if (msg.event?.source === 'General' && msg.event?.type === 'Custom' && msg.data?.name === 'GameStart') {
@@ -292,6 +349,16 @@
                     if (msg.event?.source === 'General' && msg.event?.type === 'Custom' && msg.data?.name === 'GameStop') {
                         stopTimer();
                     }
+                };
+
+                ws.onclose = () => {
+                    console.log("Disconnected from Streamer.bot (Timer). Reconnecting...");
+                    clearInterval(pollInterval);
+                    setTimeout(connectStreamerBot, 5000);
+                };
+
+                ws.onerror = (error) => {
+                    ws.close();
                 };
             } catch (e) {
                 console.warn("Streamer.bot WS not found. Running in simulation mode.");

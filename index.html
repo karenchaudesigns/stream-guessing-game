@@ -697,6 +697,7 @@
       let currentGameState = "inactive";
       let currentGameGuest = "";
       let currentGameClue = "";
+      let currentAnswer = "";
       let ws;
       let pollInterval;
 
@@ -948,22 +949,26 @@
         updateClueUI(currentGameState, currentGameGuest, currentGameClue);
 
         // 3. Process Announcement
-        let newWinner = "";
-        let newAnswer = "";
         let currentState = String(currentGameState).trim().toLowerCase();
 
-        if (variablesObj[VAR_WINNER] && variablesObj[VAR_WINNER].value) {
+        // Preserve current values unless provided in this payload
+        let newWinner = currentWinner;
+        let newAnswer = currentAnswer;
+
+        if (variablesObj[VAR_WINNER] && variablesObj[VAR_WINNER].value != null) {
           newWinner = String(variablesObj[VAR_WINNER].value).trim();
         }
-        if (variablesObj[VAR_ANSWER] && variablesObj[VAR_ANSWER].value) {
+        if (variablesObj[VAR_ANSWER] && variablesObj[VAR_ANSWER].value != null) {
           newAnswer = String(variablesObj[VAR_ANSWER].value).trim();
         }
 
         if (currentState !== "recap") {
           currentWinner = "";
+          currentAnswer = "";
           hideAnnouncement();
-        } else if (newWinner !== currentWinner) {
+        } else if (newWinner !== currentWinner || newAnswer !== currentAnswer) {
           currentWinner = newWinner;
+          currentAnswer = newAnswer;
 
           if (currentWinner === "") {
             hideAnnouncement();
@@ -974,8 +979,8 @@
                 winnerText.textContent = `WINNER: ${currentWinner}`;
             }
 
-            if (newAnswer !== "") {
-              answerText.textContent = `ANSWER: ${newAnswer}`;
+            if (currentAnswer !== "") {
+              answerText.textContent = `ANSWER: ${currentAnswer}`;
               answerText.style.display = "block";
             } else {
               answerText.style.display = "none";

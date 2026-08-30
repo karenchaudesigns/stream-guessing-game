@@ -189,6 +189,7 @@
         let ws;
         let pollInterval;
         let currentWinner = "";
+        let currentAnswer = "";
         let mockIntervalActive = false;
 
         const announceBox = document.getElementById('announcement-box');
@@ -247,29 +248,32 @@
 
         function checkAnnouncement(variablesObj) {
             let currentState = "";
-            let newWinner = "";
-            let newAnswer = "";
+            // Preserve current values unless provided in this payload
+            let newWinner = currentWinner;
+            let newAnswer = currentAnswer;
 
             if (variablesObj[VAR_STATE] && variablesObj[VAR_STATE].value) {
                 currentState = String(variablesObj[VAR_STATE].value).trim().toLowerCase();
             }
-            if (variablesObj[VAR_WINNER] && variablesObj[VAR_WINNER].value) {
+            if (variablesObj[VAR_WINNER] && variablesObj[VAR_WINNER].value != null) {
                 newWinner = String(variablesObj[VAR_WINNER].value).trim();
             }
-            if (variablesObj[VAR_ANSWER] && variablesObj[VAR_ANSWER].value) {
+            if (variablesObj[VAR_ANSWER] && variablesObj[VAR_ANSWER].value != null) {
                 newAnswer = String(variablesObj[VAR_ANSWER].value).trim();
             }
 
             // Hide immediately if state is NOT recap
             if (currentState !== 'recap') {
                 currentWinner = "";
+                currentAnswer = "";
                 hideAnnouncement();
                 return;
             }
 
             // If state is recap, update and show if winner exists
-            if (newWinner !== currentWinner) {
+            if (newWinner !== currentWinner || newAnswer !== currentAnswer) {
                 currentWinner = newWinner;
+                currentAnswer = newAnswer;
 
                 if (currentWinner === "") {
                     hideAnnouncement();
@@ -280,8 +284,8 @@
                         winnerText.textContent = `WINNER: ${currentWinner}`;
                     }
 
-                    if (newAnswer !== "") {
-                        answerText.textContent = `ANSWER: ${newAnswer}`;
+                    if (currentAnswer !== "") {
+                        answerText.textContent = `ANSWER: ${currentAnswer}`;
                         answerText.style.display = 'block';
                     } else {
                         answerText.style.display = 'none';

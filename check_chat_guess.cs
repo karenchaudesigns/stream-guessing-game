@@ -117,9 +117,9 @@ public class CPHInline
                 var jsonParts = new System.Collections.Generic.List<string>();
                 foreach (var kvp in sortedList)
                 {
-                    string uColor = colors.ContainsKey(kvp.Key) ? colors[kvp.Key] : "#ffffff";
-                    dataParts.Add($"{kvp.Key}:{kvp.Value}:{uColor}");
-                    jsonParts.Add($"{{\"username\":\"{kvp.Key}\",\"score\":{kvp.Value},\"color\":\"{uColor}\"}}");
+                    string entryColor = colors.ContainsKey(kvp.Key) ? colors[kvp.Key] : "#ffffff";
+                    dataParts.Add($"{kvp.Key}:{kvp.Value}:{entryColor}");
+                    jsonParts.Add($"{{\"username\":\"{kvp.Key}\",\"score\":{kvp.Value},\"color\":\"{entryColor}\"}}");
                 }
 
                 CPH.SetGlobalVar("guessing-game_leaderboard_data", string.Join(",", dataParts), true);

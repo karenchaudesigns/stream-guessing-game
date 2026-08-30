@@ -219,7 +219,7 @@
             } else if (safeState === 'active') {
                 clueTitle.classList.add('active');
                 clueTitle.innerHTML = 'Guess ONE-WORD answers in chat!';
-                stylusLabel.innerHTML = `CLUES FROM ${safeGuest}`;
+                stylusLabel.innerHTML = `CLUES FROM <span style="color: var(--orange);">${safeGuest}</span>`;
                 clueDisplay.innerHTML = clue ? clue : '';
             } else if (safeState === 'recap') {
                 clueTitle.classList.add('waiting');

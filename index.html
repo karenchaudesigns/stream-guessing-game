@@ -228,7 +228,7 @@
 
       .sender-label {
         position: absolute;
-        top: -30px; /* Docked right above the top bezel without overlapping */
+        top: -45px; /* Docked right above the top bezel without overlapping */
         left: 50%;
         transform: translateX(-50%);
         background: linear-gradient(
@@ -751,13 +751,13 @@
           clueDisplay.innerHTML = "";
         } else if (safeState === "waiting") {
           clueTitle.classList.add("waiting");
-          clueTitle.innerHTML = "Waiting for word...";
-          stylusLabel.innerHTML = `CLUES FROM <span style="color: var(--orange);">${safeGuest}</span>`;
+          clueTitle.innerHTML = `waiting for ${safeGuest} to lock in a secret word`;
+          stylusLabel.innerHTML = '';
           clueDisplay.innerHTML = "";
         } else if (safeState === "active") {
           clueTitle.classList.add("active");
           clueTitle.innerHTML = "Guess ONE-WORD answers in chat!";
-          stylusLabel.innerHTML = `CLUES FROM ${safeGuest}`;
+          stylusLabel.innerHTML = `CLUES FROM <span style="color: var(--orange);">${safeGuest}</span>`;
           clueDisplay.innerHTML = clue ? clue : "";
         } else if (safeState === "recap") {
           clueTitle.classList.add("waiting");

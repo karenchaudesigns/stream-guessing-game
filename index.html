@@ -383,77 +383,6 @@
         color: var(--red-accent);
       }
 
-      /* --- ANNOUNCEMENT --- */
-      /* Announcement Container */
-      #announcement-box {
-        background: var(--teal-dark);
-        border: 4px solid var(--cyan);
-        border-radius: 16px;
-        padding: 40px 60px;
-        text-align: center;
-        box-shadow:
-          0 0 40px rgba(6, 182, 212, 0.5),
-          inset 0 0 20px rgba(0, 0, 0, 0.8);
-
-        /* Flexible width and text wrapping to prevent overflow */
-        width: 80vw;
-        max-width: 800px;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-
-        /* Position perfectly in the center */
-        position: absolute;
-        top: 50%;
-        left: 50%;
-
-        /* Hidden state by default - incorporate -50% translation for centering */
-        opacity: 0;
-        transform: translate(-50%, -30%) scale(0.8);
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        pointer-events: none;
-      }
-
-      /* Visible state triggered by JavaScript */
-      #announcement-box.show {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-      }
-
-      /* Typography */
-      #winner-text {
-        /* Responsive font size so it shrinks before breaking */
-        font-size: clamp(2rem, 5vw, 3.5rem);
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 4px;
-        color: var(--yellow);
-        text-shadow:
-          3px 3px 0 #000,
-          -1px -1px 0 #000,
-          0 -1px 0 #000,
-          1px -1px 0 #000,
-          -1px 1px 0 #000,
-          1px 1px 0 #000,
-          0 0 20px var(--orange);
-        line-height: 1.2;
-      }
-
-      #answer-text {
-        /* Responsive font size */
-        font-size: clamp(1.2rem, 3.5vw, 2rem);
-        font-weight: 700;
-        margin-top: 15px;
-        color: var(--cyan-light);
-        text-shadow:
-          2px 2px 0 #000,
-          -1px -1px 0 #000,
-          0 -1px 0 #000,
-          1px -1px 0 #000,
-          -1px 1px 0 #000,
-          1px 1px 0 #000,
-          0 0 15px var(--cyan-neon);
-      }
-
       /* Hidden Simulation Panel - Hide in OBS with CSS */
 
       button {
@@ -484,16 +413,6 @@
       }
       .disconnected {
         color: var(--red-accent);
-      }
-
-      /* Override Announcement Positioning for integrated layout */
-      #announcement-box {
-        /* Position relative to center-panel instead of screen */
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -30%) scale(0.8);
-        z-index: 50; /* Ensure it's above clue */
       }
 
       /* --- TIMER --- */
@@ -651,17 +570,12 @@
         </div>
       </div>
 
-      <!-- Center Panel: Goose Clue Overlay & Announcement -->
+      <!-- Center Panel: Goose Clue Overlay -->
       <div class="center-panel">
         <div class="clue-widget" id="clueWidget">
           <div class="sender-label" id="stylusLabel"></div>
           <div class="clue-title" id="clueTitle"></div>
           <div class="clue-text" id="clueDisplay"></div>
-        </div>
-
-        <div id="announcement-box">
-          <div id="winner-text"></div>
-          <div id="answer-text"></div>
         </div>
       </div>
 
@@ -723,11 +637,6 @@
       const clueTitle = document.getElementById("clueTitle");
       const stylusLabel = document.getElementById("stylusLabel");
       const clueDisplay = document.getElementById("clueDisplay");
-
-      // Announcement
-      const announceBox = document.getElementById("announcement-box");
-      const winnerText = document.getElementById("winner-text");
-      const answerText = document.getElementById("answer-text");
 
       // Timer
       const timerWidget = document.getElementById("timerWidget");
@@ -867,7 +776,7 @@
       }
 
       // --- CLUE LOGIC ---
-      function updateClueUI(state, guest, clue) {
+      function updateClueUI(state, guest, clue, winner, answer) {
         clueTitle.className = "clue-title";
         const safeState = state
           ? String(state).trim().toLowerCase()
@@ -890,19 +799,32 @@
           clueDisplay.innerHTML = clue ? clue : "";
         } else if (safeState === "recap") {
           clueTitle.classList.add("waiting");
-          clueTitle.innerHTML = "Round Over!";
+          const safeWinner = winner ? String(winner).trim() : '';
+          const safeAnswer = answer ? String(answer).trim() : '';
+
+          let titleHtml = '';
+          if (safeWinner) {
+              if (safeWinner.toLowerCase().includes('forfeited')) {
+                  titleHtml = safeWinner.toUpperCase();
+              } else {
+                  titleHtml = `WINNER: ${safeWinner}`;
+              }
+          } else {
+              titleHtml = 'Round Over!';
+          }
+
+          if (safeAnswer) {
+              if (titleHtml !== 'Round Over!') {
+                  titleHtml += ` | ANSWER: ${safeAnswer}`;
+              } else {
+                  titleHtml = `ANSWER: ${safeAnswer}`;
+              }
+          }
+
+          clueTitle.innerHTML = titleHtml;
           stylusLabel.innerHTML = `CLUES WERE FROM <span style="color: var(--orange);">${safeGuest}</span>`;
           clueDisplay.innerHTML = clue ? clue : "";
         }
-      }
-
-      // --- ANNOUNCEMENT LOGIC ---
-      function showAnnouncement() {
-        announceBox.classList.add("show");
-      }
-
-      function hideAnnouncement() {
-        announceBox.classList.remove("show");
       }
 
       // --- WEBSOCKET HANDLERS ---
@@ -970,12 +892,8 @@
         if (variablesObj[VAR_GUEST]) currentGameGuest = variablesObj[VAR_GUEST].value;
         if (variablesObj[VAR_CLUE]) currentGameClue = variablesObj[VAR_CLUE].value;
 
-        updateClueUI(currentGameState, currentGameGuest, currentGameClue);
-
-        // 3. Process Announcement
+        // 3. Process Winner & Answer Variables
         let currentState = String(currentGameState).trim().toLowerCase();
-
-        // Preserve current values unless provided in this payload
         let newWinner = currentWinner;
         let newAnswer = currentAnswer;
 
@@ -989,30 +907,12 @@
         if (currentState !== "recap") {
           currentWinner = "";
           currentAnswer = "";
-          hideAnnouncement();
         } else if (newWinner !== currentWinner || newAnswer !== currentAnswer) {
           currentWinner = newWinner;
           currentAnswer = newAnswer;
-
-          if (currentWinner === "") {
-            hideAnnouncement();
-          } else {
-            if (currentWinner.toLowerCase().includes("forfeited")) {
-                winnerText.textContent = currentWinner.toUpperCase();
-            } else {
-                winnerText.textContent = `WINNER: ${currentWinner}`;
-            }
-
-            if (currentAnswer !== "") {
-              answerText.textContent = `ANSWER: ${currentAnswer}`;
-              answerText.style.display = "block";
-            } else {
-              answerText.style.display = "none";
-            }
-
-            showAnnouncement();
-          }
         }
+
+        updateClueUI(currentGameState, currentGameGuest, currentGameClue, currentWinner, currentAnswer);
       }
 
       function connect() {
@@ -1082,7 +982,7 @@
       }
 
       // Initialize
-      updateClueUI("inactive", "", "");
+      updateClueUI("inactive", "", "", "", "");
       connect();
     </script>
   </body>

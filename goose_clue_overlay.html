@@ -180,6 +180,8 @@
         const VAR_STATE = 'guessing-game_state';
         const VAR_GUEST = 'guessing-game_currentGuest';
         const VAR_CLUE = 'guessing-game_gooseClue';
+        const VAR_WINNER = 'guessing-game_winner';
+        const VAR_ANSWER = 'guessing-game_winningWord';
 
         let ws;
         let pollInterval;
@@ -188,6 +190,8 @@
         let currentGameState = 'inactive';
         let currentGameGuest = '';
         let currentGameClue = '';
+        let currentWinner = '';
+        let currentAnswer = '';
 
         const clueWidget = document.getElementById('clueWidget');
         const clueTitle = document.getElementById('clueTitle');
@@ -196,7 +200,7 @@
         const connStatus = document.getElementById('connection-status');
 
         // Main function to update UI based on variables
-        function updateUI(state, guest, clue) {
+        function updateUI(state, guest, clue, winner, answer) {
             clueTitle.className = 'clue-title';
             const safeState = state ? String(state).trim().toLowerCase() : 'inactive';
             const safeGuest = guest ? String(guest).trim() : '';
@@ -219,7 +223,29 @@
                 clueDisplay.innerHTML = clue ? clue : '';
             } else if (safeState === 'recap') {
                 clueTitle.classList.add('waiting');
-                clueTitle.innerHTML = 'Round Over!';
+                const safeWinner = winner ? String(winner).trim() : '';
+                const safeAnswer = answer ? String(answer).trim() : '';
+
+                let titleHtml = '';
+                if (safeWinner) {
+                    if (safeWinner.toLowerCase().includes('forfeited')) {
+                        titleHtml = safeWinner.toUpperCase();
+                    } else {
+                        titleHtml = `WINNER: ${safeWinner}`;
+                    }
+                } else {
+                    titleHtml = 'Round Over!';
+                }
+
+                if (safeAnswer) {
+                    if (titleHtml !== 'Round Over!') {
+                        titleHtml += ` | ANSWER: ${safeAnswer}`;
+                    } else {
+                        titleHtml = `ANSWER: ${safeAnswer}`;
+                    }
+                }
+
+                clueTitle.innerHTML = titleHtml;
                 stylusLabel.innerHTML = `CLUES WERE FROM <span style="color: var(--orange);">${safeGuest}</span>`;
                 clueDisplay.innerHTML = clue ? clue : '';
             }
@@ -273,8 +299,10 @@
             if (varsObj[VAR_STATE]) currentGameState = varsObj[VAR_STATE].value;
             if (varsObj[VAR_GUEST]) currentGameGuest = varsObj[VAR_GUEST].value;
             if (varsObj[VAR_CLUE]) currentGameClue = varsObj[VAR_CLUE].value;
+            if (varsObj[VAR_WINNER]) currentWinner = varsObj[VAR_WINNER].value;
+            if (varsObj[VAR_ANSWER]) currentAnswer = varsObj[VAR_ANSWER].value;
 
-            updateUI(currentGameState, currentGameGuest, currentGameClue);
+            updateUI(currentGameState, currentGameGuest, currentGameClue, currentWinner, currentAnswer);
         }
 
         function applySimulation() {
@@ -292,11 +320,11 @@
                 simClue = 'QUACK';
             }
 
-            updateUI(simState, simGuest, simClue);
+            updateUI(simState, simGuest, simClue, '', '');
         }
 
         // Initialize state on load
-        updateUI('inactive', '', '');
+        updateUI('inactive', '', '', '', '');
 
         // Start polling connection
         connect();

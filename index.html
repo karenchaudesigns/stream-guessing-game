@@ -144,6 +144,15 @@
         color: var(--cyan-light);
       }
 
+      .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--cyan);
+        background-color: rgba(0, 0, 0, 0.3);
+      }
+
       .score-value {
         color: var(--cyan-neon);
         font-weight: 900;
@@ -833,12 +842,27 @@
           row.innerHTML = `
                     <div class="username">
                         <span>${medal}</span>
+                        <img class="avatar" src="" alt="avatar" style="display: none;">
                         <span>${player.user}</span>
                     </div>
                     <div class="score-value">${player.score} pt</div>
                 `;
 
           lbListContainer.appendChild(row);
+
+          // Fetch avatar
+          fetch(`https://decapi.me/twitch/avatar/${player.user}`)
+            .then((res) => res.text())
+            .then((url) => {
+              if (url && url.startsWith("http")) {
+                const img = row.querySelector(".avatar");
+                if (img) {
+                  img.src = url;
+                  img.style.display = "inline-block";
+                }
+              }
+            })
+            .catch((err) => console.error("Error fetching avatar:", err));
         });
       }
 

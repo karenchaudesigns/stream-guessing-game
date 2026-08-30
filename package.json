@@ -20,6 +20,7 @@
   "homepage": "https://github.com/karenchaudesigns/stream-guessing-game#readme",
   "dependencies": {
     "express": "^5.2.1",
+    "playwright": "^1.62.1",
     "puppeteer": "^25.9.0",
     "ws": "^8.21.3"
   }

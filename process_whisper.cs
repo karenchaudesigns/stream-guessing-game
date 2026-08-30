@@ -31,10 +31,13 @@ public class CPHInline
 
         // 4. Lock the final word into the variable for chat to guess!
         CPH.SetGlobalVar("guessing-game_secretWord", lockedWord, true);
+        CPH.SetGlobalVar("guessing-game_secretWord", lockedWord, false);
         
         // 5. Update state and broadcast
         CPH.SetGlobalVar("guessing-game_state", "active", true);
+        CPH.SetGlobalVar("guessing-game_state", "active", false);
         CPH.SetGlobalVar("guessing-game_timerStatus", "running", true);
+        CPH.SetGlobalVar("guessing-game_timerStatus", "running", false);
 
         // 6. Confirm with the Goose & announce to stream
         CPH.SendWhisper(whisperSender, $"Locked in! Your word is: {lockedWord}. Start creating!", true);

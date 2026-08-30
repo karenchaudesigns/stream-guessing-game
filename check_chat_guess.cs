@@ -89,20 +89,26 @@ public class CPHInline
                 // Update leaderboard global variable
                 string leaderboardData = CPH.GetGlobalVar<string>("guessing-game_leaderboard_data", true);
                 var scores = new System.Collections.Generic.Dictionary<string, int>();
+                var colors = new System.Collections.Generic.Dictionary<string, string>();
 
                 if (!string.IsNullOrEmpty(leaderboardData))
                 {
                     foreach (var entry in leaderboardData.Split(','))
                     {
                         var parts = entry.Split(':');
-                        if (parts.Length == 2 && int.TryParse(parts[1], out int score))
+                        if (parts.Length >= 2 && int.TryParse(parts[1], out int score))
                         {
                             scores[parts[0]] = score;
+                            if (parts.Length >= 3)
+                            {
+                                colors[parts[0]] = parts[2];
+                            }
                         }
                     }
                 }
 
                 scores[chatUser] = newPoints;
+                colors[chatUser] = userColor;
 
                 var sortedList = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, int>>(scores);
                 sortedList.Sort((a, b) => b.Value.CompareTo(a.Value));
@@ -111,8 +117,9 @@ public class CPHInline
                 var jsonParts = new System.Collections.Generic.List<string>();
                 foreach (var kvp in sortedList)
                 {
-                    dataParts.Add($"{kvp.Key}:{kvp.Value}");
-                    jsonParts.Add($"{{\"username\":\"{kvp.Key}\",\"score\":{kvp.Value}}}");
+                    string uColor = colors.ContainsKey(kvp.Key) ? colors[kvp.Key] : "#ffffff";
+                    dataParts.Add($"{kvp.Key}:{kvp.Value}:{uColor}");
+                    jsonParts.Add($"{{\"username\":\"{kvp.Key}\",\"score\":{kvp.Value},\"color\":\"{uColor}\"}}");
                 }
 
                 CPH.SetGlobalVar("guessing-game_leaderboard_data", string.Join(",", dataParts), true);

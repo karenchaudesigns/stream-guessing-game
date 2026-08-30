@@ -38,11 +38,11 @@
 
         /* Leaderboard Widget Container */
         .leaderboard-widget {
-            background: var(--teal-dark);
+            background: rgba(24, 24, 27, 0.9); /* Same background color as Twitch dark mode */
             border: 4px solid var(--cyan);
             border-radius: 16px;
-            min-width: 350px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            min-width: 300px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -50,28 +50,27 @@
 
         /* Header */
         .header {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px 20px;
-            border-bottom: 2px solid var(--cyan);
+            background: transparent;
+            padding: 10px 15px 5px 15px;
             text-align: center;
         }
 
         .header h2 {
-            color: var(--yellow);
-            font-size: 1.5rem;
+            color: var(--cyan-light);
+            font-size: 1.2rem;
             text-transform: uppercase;
-            font-weight: 900;
-            letter-spacing: 2px;
-            text-shadow: 2px 2px 4px var(--orange);
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         /* Leaderboard List */
         .list-container {
-            padding: 15px 20px;
+            padding: 5px 15px 15px 15px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            min-height: 100px;
+            gap: 6px;
+            min-height: 80px;
         }
 
         /* Individual Rows */
@@ -79,55 +78,36 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(236, 254, 255, 0.05); /* cyan-light with opacity */
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 1.2rem;
+            background: transparent;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 1rem;
             font-weight: 700;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
             transition: transform 0.2s ease;
         }
 
         .username {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             color: var(--cyan-light);
         }
 
         .avatar {
-            width: 32px;
-            height: 32px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid var(--cyan);
+            border: 1px solid var(--cyan);
             background-color: rgba(0, 0, 0, 0.3);
         }
 
         .score-value {
-            color: var(--cyan-neon);
-            font-weight: 900;
-            text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); /* cyan with opacity */
+            color: var(--cyan-light);
+            font-weight: 800;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         }
-
-        /* Special styling for top 3 using Sunny Pond colors */
-        .score-row.rank-1 {
-            background: linear-gradient(90deg, rgba(250, 204, 21, 0.2), transparent); /* yellow */
-            border-left: 5px solid var(--yellow);
-        }
-        .score-row.rank-1 .username { color: var(--yellow); }
-
-        .score-row.rank-2 {
-            background: linear-gradient(90deg, rgba(236, 254, 255, 0.2), transparent); /* cyan-light */
-            border-left: 5px solid var(--cyan-light);
-        }
-        .score-row.rank-2 .username { color: var(--cyan-light); }
-
-        .score-row.rank-3 {
-            background: linear-gradient(90deg, rgba(234, 88, 12, 0.2), transparent); /* orange */
-            border-left: 5px solid var(--orange);
-        }
-        .score-row.rank-3 .username { color: var(--orange); }
 
         /* Empty state */
         .empty-state {
@@ -191,7 +171,7 @@
 
     <div class="leaderboard-widget">
         <div class="header">
-            <h2>🦆 LEADERBOARD</h2>
+            <h2>LEADERBOARD</h2>
         </div>
         <div class="list-container" id="leaderboard-list">
             <div class="empty-state">Waiting for scores...</div>
@@ -297,7 +277,7 @@
 
             let scoresArray = [];
             if (Array.isArray(parsedData)) {
-                scoresArray = parsedData.map(item => ({ user: item.username, score: parseInt(item.score) || 0 }));
+                scoresArray = parsedData.map(item => ({ user: item.username, score: parseInt(item.score) || 0, color: item.color }));
             } else {
                 for (const [user, score] of Object.entries(parsedData)) {
                     scoresArray.push({ user: user, score: parseInt(score) || 0 });
@@ -321,20 +301,20 @@
             topPlayers.forEach((player, index) => {
                 const rank = index + 1;
                 const row = document.createElement('div');
-                row.className = `score-row rank-${rank}`;
+                row.className = `score-row`;
 
-                let medal = '';
-                if (rank === 1) medal = '🥇';
-                if (rank === 2) medal = '🥈';
-                if (rank === 3) medal = '🥉';
+                let colorStyle = "";
+                if (player.color) {
+                    colorStyle = `style="color: ${player.color};"`;
+                }
 
                 row.innerHTML = `
                     <div class="username">
-                        <span>${medal}</span>
+                        <span style="opacity: 0.6; font-size: 0.9em; margin-right: 4px;">#${rank}</span>
                         <img class="avatar" src="" alt="avatar" style="display: none;">
-                        <span>${player.user}</span>
+                        <span ${colorStyle}>${player.user}</span>
                     </div>
-                    <div class="score-value">${player.score} pt</div>
+                    <div class="score-value">${player.score}</div>
                 `;
 
                 listContainer.appendChild(row);

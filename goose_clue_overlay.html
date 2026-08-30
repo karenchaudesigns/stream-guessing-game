@@ -48,7 +48,7 @@
 
         .sender-label {
             position: absolute;
-            top: -30px; /* Docked right above the top bezel without overlapping */
+            top: -45px; /* Docked right above the top bezel without overlapping */
             left: 50%;
             transform: translateX(-50%);
             background: linear-gradient(180deg, #ffffff 0%, #e0e0e0 40%, #ffffff 100%);
@@ -212,8 +212,8 @@
 
             } else if (safeState === 'waiting') {
                 clueTitle.classList.add('waiting');
-                clueTitle.innerHTML = 'Waiting for word...';
-                stylusLabel.innerHTML = `CLUES FROM <span style="color: var(--orange);">${safeGuest}</span>`;
+                clueTitle.innerHTML = `waiting for ${safeGuest} to lock in a secret word`;
+                stylusLabel.innerHTML = '';
                 clueDisplay.innerHTML = '';
 
             } else if (safeState === 'active') {

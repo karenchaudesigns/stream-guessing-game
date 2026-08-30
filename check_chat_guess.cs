@@ -56,6 +56,7 @@ public class CPHInline
                 // GOOSE GAVE UP!
                 CPH.SetGlobalVar("guessing-game_secretWord", "", true);
                 CPH.SetGlobalVar("guessing-game_state", "recap", true);
+                CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", true);
                 CPH.SetGlobalVar("guessing-game_winner", $"{currentGoose} forfeited", true);
                 CPH.SetGlobalVar("guessing-game_winningWord", secretWord, true);
 
@@ -72,6 +73,7 @@ public class CPHInline
                 // WE HAVE A WINNER (DUCK)!
                 CPH.SetGlobalVar("guessing-game_secretWord", "", true);
                 CPH.SetGlobalVar("guessing-game_state", "recap", true);
+                CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", true);
                 CPH.SetGlobalVar("guessing-game_winner", chatUser, true);
                 CPH.SetGlobalVar("guessing-game_winningWord", secretWord, true);
 

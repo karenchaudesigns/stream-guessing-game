@@ -579,6 +579,8 @@
       const VAR_CLUE = "guessing-game_gooseClue";
       const VAR_WINNER = "guessing-game_winner";
       const VAR_ANSWER = "guessing-game_winningWord";
+      const VAR_TIMER_STATUS = "guessing-game_timerStatus";
+      const VAR_TIMER_DURATION = "guessing-game_timerDuration";
 
       const MAX_PLAYERS_TO_SHOW = 5;
 
@@ -589,6 +591,8 @@
       let currentGameGuest = "";
       let currentGameClue = "";
       let currentAnswer = "";
+      let currentTimerStatus = "stopped";
+      let currentTimerDuration = 2;
       let ws;
       let pollInterval;
 
@@ -861,7 +865,30 @@
         if (variablesObj[VAR_GUEST]) currentGameGuest = variablesObj[VAR_GUEST].value;
         if (variablesObj[VAR_CLUE]) currentGameClue = variablesObj[VAR_CLUE].value;
 
-        // 3. Process Winner & Answer Variables
+        // 3. Process Timer State
+        let newTimerStatus = currentTimerStatus;
+        let newTimerDuration = currentTimerDuration;
+
+        if (variablesObj[VAR_TIMER_STATUS] && variablesObj[VAR_TIMER_STATUS].value != null) {
+          newTimerStatus = String(variablesObj[VAR_TIMER_STATUS].value).trim().toLowerCase();
+        }
+        if (variablesObj[VAR_TIMER_DURATION] && variablesObj[VAR_TIMER_DURATION].value != null) {
+          newTimerDuration = parseInt(variablesObj[VAR_TIMER_DURATION].value) || 2;
+        }
+
+        if (newTimerStatus !== currentTimerStatus || newTimerDuration !== currentTimerDuration) {
+          if (newTimerStatus === "running" && currentTimerStatus !== "running") {
+            startTimer(newTimerDuration);
+          } else if (newTimerStatus === "stopped" && currentTimerStatus !== "stopped") {
+            stopTimer();
+          } else if (newTimerStatus === "timedout" && currentTimerStatus !== "timedout") {
+             // Timer widget handles its own timeout UI, we just need to track state to avoid re-triggering start/stop
+          }
+          currentTimerStatus = newTimerStatus;
+          currentTimerDuration = newTimerDuration;
+        }
+
+        // 4. Process Winner & Answer Variables
         let currentState = String(currentGameState).trim().toLowerCase();
         let newWinner = currentWinner;
         let newAnswer = currentAnswer;

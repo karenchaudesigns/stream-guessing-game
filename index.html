@@ -819,13 +819,17 @@
         }
       }
 
+      function getVarValue(v) {
+        if (v == null) return null;
+        if (typeof v === "object" && v !== null && "value" in v) return v.value;
+        return v;
+      }
+
       function processVariables(variablesObj) {
         // 1. Process Leaderboard
-        if (
-          variablesObj[VAR_SCORES] &&
-          variablesObj[VAR_SCORES].value != null
-        ) {
-          const rawValue = variablesObj[VAR_SCORES].value;
+        const scoresVal = getVarValue(variablesObj[VAR_SCORES]);
+        if (scoresVal != null) {
+          const rawValue = scoresVal;
           const stringifiedValue =
             typeof rawValue === "object"
               ? JSON.stringify(rawValue)
@@ -861,19 +865,27 @@
         }
 
         // 2. Process Clue & State
-        if (variablesObj[VAR_STATE]) currentGameState = variablesObj[VAR_STATE].value;
-        if (variablesObj[VAR_GUEST]) currentGameGuest = variablesObj[VAR_GUEST].value;
-        if (variablesObj[VAR_CLUE]) currentGameClue = variablesObj[VAR_CLUE].value;
+        const stateVal = getVarValue(variablesObj[VAR_STATE]);
+        if (stateVal != null) currentGameState = stateVal;
+
+        const guestVal = getVarValue(variablesObj[VAR_GUEST]);
+        if (guestVal != null) currentGameGuest = guestVal;
+
+        const clueVal = getVarValue(variablesObj[VAR_CLUE]);
+        if (clueVal != null) currentGameClue = clueVal;
 
         // 3. Process Timer State
         let newTimerStatus = currentTimerStatus;
         let newTimerDuration = currentTimerDuration;
 
-        if (variablesObj[VAR_TIMER_STATUS] && variablesObj[VAR_TIMER_STATUS].value != null) {
-          newTimerStatus = String(variablesObj[VAR_TIMER_STATUS].value).trim().toLowerCase();
+        const tsVal = getVarValue(variablesObj[VAR_TIMER_STATUS]);
+        if (tsVal != null) {
+          newTimerStatus = String(tsVal).trim().toLowerCase();
         }
-        if (variablesObj[VAR_TIMER_DURATION] && variablesObj[VAR_TIMER_DURATION].value != null) {
-          newTimerDuration = parseInt(variablesObj[VAR_TIMER_DURATION].value) || 2;
+
+        const tdVal = getVarValue(variablesObj[VAR_TIMER_DURATION]);
+        if (tdVal != null) {
+          newTimerDuration = parseInt(tdVal) || 2;
         }
 
         if (newTimerStatus !== currentTimerStatus || newTimerDuration !== currentTimerDuration) {
@@ -893,11 +905,14 @@
         let newWinner = currentWinner;
         let newAnswer = currentAnswer;
 
-        if (variablesObj[VAR_WINNER] && variablesObj[VAR_WINNER].value != null) {
-          newWinner = String(variablesObj[VAR_WINNER].value).trim();
+        const winVal = getVarValue(variablesObj[VAR_WINNER]);
+        if (winVal != null) {
+          newWinner = String(winVal).trim();
         }
-        if (variablesObj[VAR_ANSWER] && variablesObj[VAR_ANSWER].value != null) {
-          newAnswer = String(variablesObj[VAR_ANSWER].value).trim();
+
+        const ansVal = getVarValue(variablesObj[VAR_ANSWER]);
+        if (ansVal != null) {
+          newAnswer = String(ansVal).trim();
         }
 
         if (currentState !== "recap") {

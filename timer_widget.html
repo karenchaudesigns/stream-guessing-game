@@ -285,15 +285,23 @@
             }
         }
 
+        function getVarValue(v) {
+            if (v == null) return null;
+            if (typeof v === 'object' && v !== null && 'value' in v) return v.value;
+            return v;
+        }
+
         function processVariables(variablesObj) {
             let newTimerStatus = currentTimerStatus;
             let newTimerDuration = currentTimerDuration;
 
-            if (variablesObj['guessing-game_timerStatus'] && variablesObj['guessing-game_timerStatus'].value != null) {
-                newTimerStatus = String(variablesObj['guessing-game_timerStatus'].value).trim().toLowerCase();
+            let tsVal = getVarValue(variablesObj['guessing-game_timerStatus']);
+            if (tsVal != null) {
+                newTimerStatus = String(tsVal).trim().toLowerCase();
             }
-            if (variablesObj['guessing-game_timerDuration'] && variablesObj['guessing-game_timerDuration'].value != null) {
-                newTimerDuration = parseInt(variablesObj['guessing-game_timerDuration'].value) || 2;
+            let tdVal = getVarValue(variablesObj['guessing-game_timerDuration']);
+            if (tdVal != null) {
+                newTimerDuration = parseInt(tdVal) || 2;
             }
 
             if (newTimerStatus !== currentTimerStatus || newTimerDuration !== currentTimerDuration) {

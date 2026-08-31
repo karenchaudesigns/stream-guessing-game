@@ -19,9 +19,9 @@
         --red-accent: #f24343;
 
         /* Timer specific */
-        --timer-teal-dark: #005f73;
-        --timer-teal-light: #0a9396;
-        --timer-yellow: #e9d8a6;
+        --timer-teal-dark: #2e7d32;
+        --timer-teal-light: #81c784;
+        --timer-yellow: #fbc02d;
         --timer-orange: #ee9b00;
         --timer-red: #ae2012;
         --circle-size: 200px;
@@ -401,18 +401,33 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border: 4px solid var(--timer-teal-dark);
+        border: 8px solid #5d4037;
         color: var(--timer-yellow);
         transition: all 0.3s ease;
+      }
+
+      /* Stopwatch Button Pseudo-element */
+      .timer-widget.state-stopwatch::before {
+        content: "";
+        position: absolute;
+        top: -24px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 24px;
+        height: 16px;
+        background: #9e9e9e;
+        border: 4px solid #424242;
+        border-radius: 4px 4px 0 0;
+        z-index: 5;
       }
 
       /* SVG Progress Ring (Hidden by default until <= 60s) */
       .progress-ring {
         position: absolute;
-        top: -4px;
-        left: -4px;
-        width: calc(100% + 8px);
-        height: calc(100% + 8px);
+        top: -8px; /* Offset adjusted for the thicker border */
+        left: -8px;
+        width: calc(100% + 16px);
+        height: calc(100% + 16px);
         transform: rotate(-90deg);
         opacity: 0;
         transition: opacity 0.5s ease;
@@ -421,6 +436,12 @@
 
       .progress-ring.visible {
         opacity: 1;
+      }
+
+      .progress-ring__track {
+        fill: transparent;
+        stroke: rgba(0, 0, 0, 0.2);
+        stroke-width: 8;
       }
 
       .progress-ring__circle {
@@ -440,6 +461,7 @@
         line-height: 1;
         z-index: 10;
         transition: color 0.3s ease;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
       }
 
       /* State: Standard ( > 60 seconds) */
@@ -551,6 +573,7 @@
       <div class="right-panel">
         <div class="timer-widget state-standard" id="timerWidget">
           <svg class="progress-ring" id="progressRing">
+            <circle class="progress-ring__track" cx="104" cy="104" r="96"></circle>
             <circle
               class="progress-ring__circle"
               id="ringCircle"
@@ -631,7 +654,10 @@
       function updateTimerDisplay() {
         if (timeRemaining <= 0) {
           clearInterval(timerInterval);
-          timeDisplay.innerText = "00";
+          timeDisplay.innerText = "TIME'S UP!";
+          timeDisplay.style.fontSize = "2.5rem";
+          const secsLabel = document.getElementById('secsLabel');
+          if (secsLabel) secsLabel.style.opacity = '0';
           setTimerProgress(0);
           sendToStreamerBot("timedout");
           return;
@@ -642,11 +668,21 @@
 
         if (timeRemaining > 60) {
           timerWidget.className = "timer-widget state-standard";
+          timerWidget.style.background = "";
+          timeDisplay.style.fontSize = "";
+          const secsLabel = document.getElementById('secsLabel');
+          if (secsLabel) secsLabel.style.opacity = '';
           progressRing.classList.remove("visible");
           timeDisplay.innerText = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
         } else {
           progressRing.classList.add("visible");
           timeDisplay.innerText = seconds.toString().padStart(2, "0");
+          timeDisplay.style.fontSize = "";
+          const secsLabel = document.getElementById('secsLabel');
+          if (secsLabel) secsLabel.style.opacity = '';
+
+          const hue = (timeRemaining / 60) * 140;
+          timerWidget.style.background = `linear-gradient(135deg, hsl(${hue}, 80%, 30%), hsl(${hue}, 80%, 50%))`;
 
           const percent = (timeRemaining / 60) * 100;
           setTimerProgress(percent);
@@ -676,6 +712,8 @@
         clearInterval(timerInterval);
         timeRemaining = 0;
         timerWidget.className = "timer-widget state-standard";
+        timerWidget.style.background = "";
+        timeDisplay.style.fontSize = "";
         progressRing.classList.remove("visible");
         timeDisplay.innerText = "00:00";
       }
@@ -778,6 +816,8 @@
           if (safeWinner) {
               if (safeWinner.toLowerCase().includes('forfeited')) {
                   titleHtml = safeWinner;
+              } else if (safeWinner.toLowerCase() === "time's up") {
+                  titleHtml = "TIME'S UP! No one guessed it.";
               } else {
                   titleHtml = `WINNER: ${safeWinner}`;
               }

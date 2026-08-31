@@ -269,7 +269,7 @@
 
                 ws.onmessage = (event) => {
                     const data = JSON.parse(event.data);
-                    if ((data.id === REQUEST_ID + '_persisted' || data.id === REQUEST_ID + '_nonpersisted') && data.variables) {
+                    if (data.id === REQUEST_ID + '_persisted' && data.variables) {
                         parseVariables(data.variables);
                     }
                 };
@@ -294,7 +294,6 @@
         function requestGlobals() {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ request: "GetGlobals", id: REQUEST_ID + '_persisted', persisted: true }));
-                ws.send(JSON.stringify({ request: "GetGlobals", id: REQUEST_ID + '_nonpersisted', persisted: false }));
             }
         }
 

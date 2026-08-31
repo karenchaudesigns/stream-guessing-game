@@ -17,8 +17,8 @@ public class CPHInline
         else if (CPH.TryGetArg("color", out string colorArg) && !string.IsNullOrEmpty(colorArg)) userColor = colorArg;
 
         // 2. Get the current active secret word and goose
-        string secretWord = CPH.GetGlobalVar<string>("guessing-game_secretWord");
-        string currentGoose = CPH.GetGlobalVar<string>("guessing-game_currentGuest");
+        string secretWord = CPH.GetGlobalVar<string>("guessing-game_secretWord", true);
+        string currentGoose = CPH.GetGlobalVar<string>("guessing-game_currentGuest", true);
 
         // If the game isn't active (word is empty or null), do nothing
         if (string.IsNullOrEmpty(secretWord)) return true;
@@ -55,15 +55,10 @@ public class CPHInline
             {
                 // GOOSE GAVE UP!
                 CPH.SetGlobalVar("guessing-game_secretWord", "", true);
-                CPH.SetGlobalVar("guessing-game_secretWord", "", false);
                 CPH.SetGlobalVar("guessing-game_state", "recap", true);
-                CPH.SetGlobalVar("guessing-game_state", "recap", false);
                 CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", true);
-                CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", false);
                 CPH.SetGlobalVar("guessing-game_winner", $"{currentGoose} forfeited", true);
-                CPH.SetGlobalVar("guessing-game_winner", $"{currentGoose} forfeited", false);
                 CPH.SetGlobalVar("guessing-game_winningWord", secretWord, true);
-                CPH.SetGlobalVar("guessing-game_winningWord", secretWord, false);
 
                 CPH.SendMessage($"❌ The Goose (@{chatUser}) gave up! The word was {secretWord}. No one wins this round.");
 
@@ -77,15 +72,10 @@ public class CPHInline
             {
                 // WE HAVE A WINNER (DUCK)!
                 CPH.SetGlobalVar("guessing-game_secretWord", "", true);
-                CPH.SetGlobalVar("guessing-game_secretWord", "", false);
                 CPH.SetGlobalVar("guessing-game_state", "recap", true);
-                CPH.SetGlobalVar("guessing-game_state", "recap", false);
                 CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", true);
-                CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", false);
                 CPH.SetGlobalVar("guessing-game_winner", chatUser, true);
-                CPH.SetGlobalVar("guessing-game_winner", chatUser, false);
                 CPH.SetGlobalVar("guessing-game_winningWord", secretWord, true);
-                CPH.SetGlobalVar("guessing-game_winningWord", secretWord, false);
 
                 // Send success message to chat
                 CPH.SendMessage($"🏆 @{chatUser} GOT IT! The word was {secretWord}! 🏆");

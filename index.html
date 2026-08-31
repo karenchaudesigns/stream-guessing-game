@@ -710,6 +710,10 @@
 
       function stopTimer() {
         clearInterval(timerInterval);
+      }
+
+      function resetTimer() {
+        clearInterval(timerInterval);
         timeRemaining = 0;
         timerWidget.className = "timer-widget state-standard";
         timerWidget.style.background = "";
@@ -1005,7 +1009,7 @@
                   startTimer(parseInt(duration));
                 }
               } else if (msg.data?.name === "GameStop") {
-                stopTimer();
+                resetTimer();
               }
             }
           };

@@ -200,7 +200,7 @@
         <label>Minutes:</label>
         <input type="number" id="simMinutes" value="2" min="1"><br>
         <button onclick="startSimulation()">Start Game (Set Secret Word)</button>
-        <button onclick="stopTimer()">Stop/Reset</button>
+        <button onclick="resetTimer()">Stop/Reset</button>
         <button onclick="document.getElementById('control-panel').style.display='none'">Hide Panel</button>
     </div>
 
@@ -295,6 +295,10 @@
 
         function stopTimer() {
             clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
             timeRemaining = 0;
             timerWidget.className = 'timer-widget state-standard';
             timerWidget.style.background = "";
@@ -386,7 +390,7 @@
 
                     // Listen for manual stop/reset
                     if (msg.event?.source === 'General' && msg.event?.type === 'Custom' && msg.data?.name === 'GameStop') {
-                        stopTimer();
+                        resetTimer();
                     }
                 };
 

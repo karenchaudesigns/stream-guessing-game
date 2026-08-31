@@ -275,13 +275,6 @@
                         persisted: true,
                     })
                 );
-                ws.send(
-                    JSON.stringify({
-                        request: "GetGlobals",
-                        id: REQUEST_ID + "_nonpersisted",
-                        persisted: false,
-                    })
-                );
             }
         }
 
@@ -336,7 +329,7 @@
                     const msg = JSON.parse(event.data);
 
                     if (
-                        (msg.id === REQUEST_ID + "_persisted" || msg.id === REQUEST_ID + "_nonpersisted") &&
+                        msg.id === REQUEST_ID + "_persisted" &&
                         msg.variables
                     ) {
                         processVariables(msg.variables);

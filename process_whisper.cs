@@ -12,7 +12,7 @@ public class CPHInline
         string message = string.IsNullOrEmpty(msgArg) ? "" : msgArg.Trim().ToUpper();
         
         // 2. Check who our current Goose is supposed to be
-        string currentGuest = CPH.GetGlobalVar<string>("guessing-game_currentGuest");
+        string currentGuest = CPH.GetGlobalVar<string>("guessing-game_currentGuest", true);
 
         // If no game is pending, or someone else whispered the bot, ignore it
         if (string.IsNullOrEmpty(currentGuest) || whisperSender != currentGuest.ToLower()) return true;
@@ -20,9 +20,9 @@ public class CPHInline
         string lockedWord = "";
 
         // 3. Match their reply to the saved options
-        if (message.StartsWith("A")) lockedWord = CPH.GetGlobalVar<string>("guessing-game_guestOptions_A");
-        else if (message.StartsWith("B")) lockedWord = CPH.GetGlobalVar<string>("guessing-game_guestOptions_B");
-        else if (message.StartsWith("C")) lockedWord = CPH.GetGlobalVar<string>("guessing-game_guestOptions_C");
+        if (message.StartsWith("A")) lockedWord = CPH.GetGlobalVar<string>("guessing-game_guestOptions_A", true);
+        else if (message.StartsWith("B")) lockedWord = CPH.GetGlobalVar<string>("guessing-game_guestOptions_B", true);
+        else if (message.StartsWith("C")) lockedWord = CPH.GetGlobalVar<string>("guessing-game_guestOptions_C", true);
         else 
         {
             CPH.SendWhisper(whisperSender, "Invalid choice. Please reply with exactly A, B, or C.", true);
@@ -31,13 +31,10 @@ public class CPHInline
 
         // 4. Lock the final word into the variable for chat to guess!
         CPH.SetGlobalVar("guessing-game_secretWord", lockedWord, true);
-        CPH.SetGlobalVar("guessing-game_secretWord", lockedWord, false);
         
         // 5. Update state and broadcast
         CPH.SetGlobalVar("guessing-game_state", "active", true);
-        CPH.SetGlobalVar("guessing-game_state", "active", false);
         CPH.SetGlobalVar("guessing-game_timerStatus", "running", true);
-        CPH.SetGlobalVar("guessing-game_timerStatus", "running", false);
 
         // 6. Confirm with the Goose & announce to stream
         CPH.SendWhisper(whisperSender, $"Locked in! Your word is: {lockedWord}. Start creating!", true);
@@ -50,10 +47,6 @@ public class CPHInline
         int timerDuration = 2; // Default to 2 minutes
 
         string timerDurationStr = CPH.GetGlobalVar<string>("guessing-game_timerDuration", true);
-        if (string.IsNullOrEmpty(timerDurationStr))
-        {
-            timerDurationStr = CPH.GetGlobalVar<string>("guessing-game_timerDuration", false);
-        }
 
         if (!string.IsNullOrEmpty(timerDurationStr) && int.TryParse(timerDurationStr, out int parsedStrDuration))
         {
@@ -62,10 +55,6 @@ public class CPHInline
         else
         {
             int timerDurationInt = CPH.GetGlobalVar<int>("guessing-game_timerDuration", true);
-            if (timerDurationInt == 0)
-            {
-                timerDurationInt = CPH.GetGlobalVar<int>("guessing-game_timerDuration", false);
-            }
             if (timerDurationInt > 0)
             {
                 timerDuration = timerDurationInt;

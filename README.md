@@ -62,6 +62,13 @@ You will need to create three separate Actions in Streamer.bot.
 * **Sub-Action:** Core -> C# -> Execute C# Code.
 * **Code:** Paste the contents of check_chat_guess.cs.
 
+#### **Action 4: Timer Finished**
+
+* **Name:** Timer Finished
+* **Trigger:** None (Triggered by frontend `DoAction` WebSocket request when the timer hits zero).
+* **Sub-Action:** Core -> C# -> Execute C# Code.
+* **Code:** Paste the contents of timer_finished.cs.
+
 ## **How to Play Live**
 
 1. **Start the Game:** Type !giveword \[username] in your Twitch chat.

@@ -233,6 +233,8 @@
                 if (safeWinner) {
                     if (safeWinner.toLowerCase().includes('forfeited')) {
                         titleHtml = safeWinner;
+                    } else if (safeWinner.toLowerCase() === "time's up") {
+                        titleHtml = "TIME'S UP! No one guessed it.";
                     } else {
                         titleHtml = `WINNER: ${safeWinner}`;
                     }

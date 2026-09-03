@@ -1,4 +1,6 @@
 using System;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 public class CPHInline
 {
@@ -51,88 +53,113 @@ public class CPHInline
             // Check for a match
             if (isCorrect)
             {
-            if (chatUser.ToLower() == currentGoose?.ToLower())
-            {
-                // GOOSE GAVE UP!
-                CPH.SetGlobalVar("guessing-game_secretWord", "", true);
-                CPH.SetGlobalVar("guessing-game_state", "recap", true);
-                CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", true);
-                CPH.SetGlobalVar("guessing-game_winner", $"{currentGoose} forfeited", true);
-                CPH.SetGlobalVar("guessing-game_winningWord", secretWord, true);
-
-                CPH.SendMessage($"❌ The Goose (@{chatUser}) gave up! The word was {secretWord}. No one wins this round.");
-
-                string giveUpPayload = $"{{\"event\":\"give_up\",\"word\":\"{secretWord}\"}}";
-                CPH.WebsocketBroadcastString(giveUpPayload);
-
-                string statePayload = "{\"event\":\"state_change\",\"state\":\"recap\"}";
-                CPH.WebsocketBroadcastString(statePayload);
-            }
-            else
-            {
-                // WE HAVE A WINNER (DUCK)!
-                CPH.SetGlobalVar("guessing-game_secretWord", "", true);
-                CPH.SetGlobalVar("guessing-game_state", "recap", true);
-                CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", true);
-                CPH.SetGlobalVar("guessing-game_winner", chatUser, true);
-                CPH.SetGlobalVar("guessing-game_winningWord", secretWord, true);
-
-                // Send success message to chat
-                CPH.SendMessage($"🏆 @{chatUser} GOT IT! The word was {secretWord}! 🏆");
-
-                // Format a JSON message to broadcast to our OBS HTML overlay
-                int pointsAwarded = 10;
-                int currentPoints = CPH.GetTwitchUserVar<int>(chatUser, "guessing-game_score", true);
-                int newPoints = currentPoints + pointsAwarded;
-                CPH.SetTwitchUserVar(chatUser, "guessing-game_score", newPoints, true);
-
-                // Update leaderboard global variable
-                string leaderboardData = CPH.GetGlobalVar<string>("guessing-game_leaderboard_data", true);
-                var scores = new System.Collections.Generic.Dictionary<string, int>();
-                var colors = new System.Collections.Generic.Dictionary<string, string>();
-
-                if (!string.IsNullOrEmpty(leaderboardData))
+                if (chatUser.ToLower() == currentGoose?.ToLower())
                 {
-                    foreach (var entry in leaderboardData.Split(','))
+                    // GOOSE GAVE UP!
+                    CPH.SetGlobalVar("guessing-game_secretWord", "", true);
+                    CPH.SetGlobalVar("guessing-game_state", "recap", true);
+                    CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", true);
+                    CPH.SetGlobalVar("guessing-game_winner", $"{currentGoose} forfeited", true);
+                    CPH.SetGlobalVar("guessing-game_winningWord", secretWord, true);
+
+                    CPH.SendMessage($"❌ The Goose (@{chatUser}) gave up! The word was {secretWord}. No one wins this round.");
+
+                    string giveUpPayload = $"{{\"event\":\"give_up\",\"word\":\"{secretWord}\"}}";
+                    CPH.WebsocketBroadcastString(giveUpPayload);
+
+                    string statePayload = "{\"event\":\"state_change\",\"state\":\"recap\"}";
+                    CPH.WebsocketBroadcastString(statePayload);
+                }
+                else
+                {
+                    // WE HAVE A WINNER (DUCK)!
+                    CPH.SetGlobalVar("guessing-game_secretWord", "", true);
+                    CPH.SetGlobalVar("guessing-game_state", "recap", true);
+                    CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", true);
+                    CPH.SetGlobalVar("guessing-game_winner", chatUser, true);
+                    CPH.SetGlobalVar("guessing-game_winningWord", secretWord, true);
+
+                    // Send success message to chat
+                    CPH.SendMessage($"🏆 @{chatUser} GOT IT! The word was {secretWord}! 🏆");
+
+                    // Format a JSON message to broadcast to our OBS HTML overlay
+                    int pointsAwarded = 10;
+                    int currentPoints = CPH.GetTwitchUserVar<int>(chatUser, "guessing-game_score", true);
+                    int newPoints = currentPoints + pointsAwarded;
+                    CPH.SetTwitchUserVar(chatUser, "guessing-game_score", newPoints, true);
+
+                    // Update leaderboard global variable
+                    string leaderboardData = CPH.GetGlobalVar<string>("guessing-game_leaderboard_data", true);
+                    var scores = new System.Collections.Generic.Dictionary<string, int>();
+                    var colors = new System.Collections.Generic.Dictionary<string, string>();
+
+                    if (!string.IsNullOrEmpty(leaderboardData))
                     {
-                        var parts = entry.Split(':');
-                        if (parts.Length >= 2 && int.TryParse(parts[1], out int score))
+                        foreach (var entry in leaderboardData.Split(','))
                         {
-                            scores[parts[0]] = score;
-                            if (parts.Length >= 3)
+                            var parts = entry.Split(':');
+                            if (parts.Length >= 2 && int.TryParse(parts[1], out int score))
                             {
-                                colors[parts[0]] = parts[2];
+                                scores[parts[0]] = score;
+                                if (parts.Length >= 3)
+                                {
+                                    colors[parts[0]] = parts[2];
+                                }
                             }
                         }
                     }
+
+                    scores[chatUser] = newPoints;
+                    colors[chatUser] = userColor;
+
+                    var sortedList = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, int>>(scores);
+                    sortedList.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+                    var dataParts = new System.Collections.Generic.List<string>();
+                    var jsonParts = new System.Collections.Generic.List<string>();
+                    foreach (var kvp in sortedList)
+                    {
+                        string entryColor = colors.ContainsKey(kvp.Key) ? colors[kvp.Key] : "#ffffff";
+                        dataParts.Add($"{kvp.Key}:{kvp.Value}:{entryColor}");
+                        jsonParts.Add($"{{\"username\":\"{kvp.Key}\",\"score\":{kvp.Value},\"color\":\"{entryColor}\"}}");
+                    }
+
+                    CPH.SetGlobalVar("guessing-game_leaderboard_data", string.Join(",", dataParts), true);
+                    CPH.SetGlobalVar("guessing-game_leaderboard", "[" + string.Join(",", jsonParts) + "]", true);
+
+                    string winnerPayload = $"{{\"event\":\"winner\",\"user\":\"{chatUser}\",\"word\":\"{secretWord}\",\"points\":{pointsAwarded}}}";
+
+                    // Broadcast via Streamer.bot WebSocket Server
+                    CPH.WebsocketBroadcastString(winnerPayload);
+
+                    string statePayload = "{\"event\":\"state_change\",\"state\":\"recap\"}";
+                    CPH.WebsocketBroadcastString(statePayload);
                 }
 
-                scores[chatUser] = newPoints;
-                colors[chatUser] = userColor;
-
-                var sortedList = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, int>>(scores);
-                sortedList.Sort((a, b) => b.Value.CompareTo(a.Value));
-
-                var dataParts = new System.Collections.Generic.List<string>();
-                var jsonParts = new System.Collections.Generic.List<string>();
-                foreach (var kvp in sortedList)
-                {
-                    string entryColor = colors.ContainsKey(kvp.Key) ? colors[kvp.Key] : "#ffffff";
-                    dataParts.Add($"{kvp.Key}:{kvp.Value}:{entryColor}");
-                    jsonParts.Add($"{{\"username\":\"{kvp.Key}\",\"score\":{kvp.Value},\"color\":\"{entryColor}\"}}");
+                int recapDuration = 60;
+                try {
+                    string configPath = "config.json";
+                    if (System.IO.File.Exists(configPath)) {
+                        string configText = System.IO.File.ReadAllText(configPath);
+                        var match = Regex.Match(configText, @"""recapDurationSeconds""\s*:\s*(\d+)");
+                        if (match.Success) {
+                            recapDuration = int.Parse(match.Groups[1].Value);
+                        }
+                    }
+                } catch (Exception ex) {
+                    CPH.LogInfo("Config Read Error: " + ex.Message);
                 }
 
-                CPH.SetGlobalVar("guessing-game_leaderboard_data", string.Join(",", dataParts), true);
-                CPH.SetGlobalVar("guessing-game_leaderboard", "[" + string.Join(",", jsonParts) + "]", true);
-
-                string winnerPayload = $"{{\"event\":\"winner\",\"user\":\"{chatUser}\",\"word\":\"{secretWord}\",\"points\":{pointsAwarded}}}";
-
-                // Broadcast via Streamer.bot WebSocket Server
-                CPH.WebsocketBroadcastString(winnerPayload);
-
-                string statePayload = "{\"event\":\"state_change\",\"state\":\"recap\"}";
-                CPH.WebsocketBroadcastString(statePayload);
-            }
+                if (recapDuration > 0) {
+                    Task.Run(async () => {
+                        await Task.Delay(recapDuration * 1000);
+                        string currentState = CPH.GetGlobalVar<string>("guessing-game_state", true);
+                        if (currentState == "recap") {
+                            CPH.SetGlobalVar("guessing-game_state", "inactive", true);
+                            CPH.WebsocketBroadcastString("{\"event\":\"state_change\",\"state\":\"inactive\"}");
+                        }
+                    });
+                }
             }
         }
         

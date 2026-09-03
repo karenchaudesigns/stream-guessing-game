@@ -616,6 +616,7 @@
       let currentAnswer = "";
       let currentTimerStatus = "stopped";
       let currentTimerDuration = 2;
+      let currentTimerAvatarWinner = "";
       let ws;
       let pollInterval;
 
@@ -646,6 +647,36 @@
       ringCircle.style.strokeDashoffset = circumference;
 
       // --- TIMER LOGIC ---
+      function updateTimerAvatar(state, winner) {
+        const safeState = state ? String(state).trim().toLowerCase() : "inactive";
+        const safeWinner = winner ? String(winner).trim() : "";
+
+        if (safeState === "recap" && safeWinner && safeWinner.toLowerCase() !== "time's up" && !safeWinner.toLowerCase().includes("forfeited")) {
+          if (currentTimerAvatarWinner !== safeWinner) {
+            currentTimerAvatarWinner = safeWinner;
+            fetch(`https://decapi.me/twitch/avatar/${safeWinner}`)
+              .then((res) => res.text())
+              .then((url) => {
+                if (url && url.startsWith("http")) {
+                  timerWidget.style.background = `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('${url}')`;
+                  timerWidget.style.backgroundSize = "cover";
+                  timerWidget.style.backgroundPosition = "center";
+                }
+              })
+              .catch((err) => console.error("Error fetching avatar for timer:", err));
+          }
+        } else {
+          if (currentTimerAvatarWinner !== "") {
+            currentTimerAvatarWinner = "";
+            timerWidget.style.background = "";
+            if (timeRemaining <= 60 && timeRemaining > 0) {
+                const hue = (timeRemaining / 60) * 140;
+                timerWidget.style.background = `linear-gradient(135deg, hsl(${hue}, 80%, 30%), hsl(${hue}, 80%, 50%))`;
+            }
+          }
+        }
+      }
+
       function setTimerProgress(percent) {
         const offset = circumference - (percent / 100) * circumference;
         ringCircle.style.strokeDashoffset = offset;
@@ -715,6 +746,7 @@
       function resetTimer() {
         clearInterval(timerInterval);
         timeRemaining = 0;
+        currentTimerAvatarWinner = "";
         timerWidget.className = "timer-widget state-standard";
         timerWidget.style.background = "";
         timeDisplay.style.fontSize = "";
@@ -961,6 +993,7 @@
         }
 
         updateClueUI(currentGameState, currentGameGuest, currentGameClue, currentWinner, currentAnswer);
+        updateTimerAvatar(currentGameState, currentWinner);
       }
 
       function connect() {

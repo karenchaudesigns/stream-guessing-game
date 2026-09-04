@@ -69,6 +69,14 @@ You will need to create three separate Actions in Streamer.bot.
 * **Sub-Action:** Core -> C# -> Execute C# Code.
 * **Code:** Paste the contents of timer_finished.cs.
 
+#### **Action 5: Demo Mode**
+
+* **Name:** Demo Mode
+* **Trigger:** Twitch -> Chat -> Command (e.g. !demo - Restrict to Broadcaster)
+* **Sub-Action:** Core -> C# -> Execute C# Code.
+* **Code:** Paste the contents of demo_mode.cs.
+
+
 ## **How to Play Live**
 
 1. **Start the Game:** Type !giveword \[username] in your Twitch chat.

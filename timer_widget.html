@@ -224,6 +224,44 @@
         let pollInterval;
         const REQUEST_ID = 'duck-timer';
 
+        // --- AUDIO LOGIC ---
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTimeout() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                osc.type = 'sawtooth';
+
+                const now = audioCtx.currentTime;
+
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 1.0);
+
+                osc.start(now);
+                osc.stop(now + 1.0);
+            } catch(e) {
+                console.warn("Audio play error", e);
+            }
+        }
+
         // Setup SVG Circle for Progress Ring
         const radius = ringCircle.r.baseVal.value;
         const circumference = radius * 2 * Math.PI;
@@ -275,6 +313,7 @@
                 setProgress(0);
                 // Notify Streamer.bot that time is up
                 sendToStreamerBot("timedout");
+                playTimeout();
                 return;
             }
 

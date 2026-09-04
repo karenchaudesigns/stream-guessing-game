@@ -196,6 +196,59 @@
         let currentWinner = '';
         let currentAnswer = '';
 
+        // --- AUDIO LOGIC ---
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSuccess() {
+            try {
+                initAudio();
+                const osc1 = audioCtx.createOscillator();
+                const osc2 = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                osc1.type = 'sine';
+                osc2.type = 'triangle';
+
+                const now = audioCtx.currentTime;
+
+                osc1.connect(gainNode);
+                osc2.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.05);
+                gainNode.gain.setValueAtTime(0.3, now + 0.4);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+
+                osc1.frequency.setValueAtTime(523.25, now);
+                osc2.frequency.setValueAtTime(523.25, now);
+
+                osc1.frequency.setValueAtTime(659.25, now + 0.15);
+                osc2.frequency.setValueAtTime(659.25, now + 0.15);
+
+                osc1.frequency.setValueAtTime(783.99, now + 0.3);
+                osc2.frequency.setValueAtTime(783.99, now + 0.3);
+
+                osc1.frequency.setValueAtTime(1046.50, now + 0.45);
+                osc2.frequency.setValueAtTime(1046.50, now + 0.45);
+
+                osc1.start(now);
+                osc2.start(now);
+                osc1.stop(now + 1.0);
+                osc2.stop(now + 1.0);
+            } catch(e) {
+                console.warn("Audio play error", e);
+            }
+        }
+
         const clueWidget = document.getElementById('clueWidget');
         const clueTitle = document.getElementById('clueTitle');
         const stylusLabel = document.getElementById('stylusLabel');
@@ -303,8 +356,17 @@
             if (varsObj[VAR_STATE]) currentGameState = varsObj[VAR_STATE].value;
             if (varsObj[VAR_GUEST]) currentGameGuest = varsObj[VAR_GUEST].value;
             if (varsObj[VAR_CLUE]) currentGameClue = varsObj[VAR_CLUE].value;
-            if (varsObj[VAR_WINNER]) currentWinner = varsObj[VAR_WINNER].value;
+
+            let newWinner = currentWinner;
+            if (varsObj[VAR_WINNER]) newWinner = varsObj[VAR_WINNER].value;
             if (varsObj[VAR_ANSWER]) currentAnswer = varsObj[VAR_ANSWER].value;
+
+            if (newWinner !== currentWinner) {
+                if (newWinner !== "" && newWinner.toLowerCase() !== "time's up" && !newWinner.toLowerCase().includes("forfeited")) {
+                    playSuccess();
+                }
+                currentWinner = newWinner;
+            }
 
             updateUI(currentGameState, currentGameGuest, currentGameClue, currentWinner, currentAnswer);
         }

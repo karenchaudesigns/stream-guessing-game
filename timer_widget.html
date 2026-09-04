@@ -369,15 +369,17 @@
             clearInterval(timerInterval);
         }
 
-        function resetTimer() {
+        function resetTimer(durationMinutes = 0) {
             clearInterval(timerInterval);
-            timeRemaining = 0;
+            timeRemaining = durationMinutes * 60;
             currentTimerAvatarWinner = "";
             timerWidget.className = 'timer-widget state-standard';
             timerWidget.style.background = "";
             timeDisplay.style.fontSize = "";
             progressRing.classList.remove('visible');
-            timeDisplay.innerText = "00:00";
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            timeDisplay.innerText = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
         }
 
         // --- Streamer.bot WebSocket Logic ---
@@ -412,7 +414,9 @@
                 newTimerDuration = parseInt(tdVal) || 2;
             }
 
-            if (newTimerStatus !== currentTimerStatus || newTimerDuration !== currentTimerDuration) {
+            let durationChanged = newTimerDuration !== currentTimerDuration;
+
+            if (newTimerStatus !== currentTimerStatus || durationChanged) {
                 if (newTimerStatus === "running" && currentTimerStatus !== "running") {
                     startTimer(newTimerDuration);
                 } else if (newTimerStatus === "stopped" && currentTimerStatus !== "stopped") {
@@ -422,9 +426,21 @@
                 currentTimerDuration = newTimerDuration;
             }
 
+            let previousGameState = currentGameState;
             let stateVal = getVarValue(variablesObj['guessing-game_state']);
             if (stateVal != null) {
                 currentGameState = String(stateVal).trim().toLowerCase();
+            }
+
+            if (currentGameState === "inactive") {
+                timerWidget.style.display = 'none';
+            } else {
+                timerWidget.style.display = '';
+            }
+
+            if ((currentGameState === "waiting" && previousGameState !== "waiting") ||
+                (currentGameState === "waiting" && durationChanged)) {
+                resetTimer(newTimerDuration);
             }
 
             let winVal = getVarValue(variablesObj['guessing-game_winner']);

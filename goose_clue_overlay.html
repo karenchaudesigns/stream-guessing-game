@@ -148,13 +148,53 @@
         }
         .connected { color: var(--teal-dark); }
         .disconnected { color: var(--red-accent); }
-    </style>
+
+      .floating-clues-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 12px;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .floating-clue {
+        position: absolute;
+        color: #ffffff;
+        font-size: 2.2rem;
+        font-weight: 900;
+        text-shadow:
+          2px 2px 0 #000,
+          -1px -1px 0 #000,
+          0 -1px 0 #000,
+          1px -1px 0 #000,
+          -1px 1px 0 #000,
+          1px 1px 0 #000;
+        pointer-events: none;
+        white-space: pre-wrap;
+        max-width: 80%;
+        text-align: center;
+        opacity: 0;
+        animation: floatDrift 12s linear forwards;
+      }
+
+      @keyframes floatDrift {
+        0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+        10% { opacity: 1; transform: translate(calc(var(--x-drift) * 0.1), calc(var(--y-drift) * 0.1)) scale(1); }
+        90% { opacity: 1; transform: translate(calc(var(--x-drift) * 0.9), calc(var(--y-drift) * 0.9)) scale(1); }
+        100% { opacity: 0; transform: translate(var(--x-drift), var(--y-drift)) scale(1.1); }
+      }
+</style>
 </head>
 <body>
 
     <div class="clue-widget" id="clueWidget">
         <div class="sender-label" id="stylusLabel"></div>
         <div class="clue-title" id="clueTitle"></div>
+          <div class="floating-clues-container" id="floatingCluesContainer"></div>
         <div class="clue-text" id="clueDisplay"></div>
     </div>
 
@@ -276,7 +316,7 @@
                 clueTitle.classList.add('active');
                 clueTitle.innerHTML = 'Guess ONE-WORD answers in chat!';
                 stylusLabel.innerHTML = `Clues from ${safeGuest}`;
-                clueDisplay.innerHTML = clue ? clue : '';
+                clueDisplay.innerHTML = '';
             } else if (safeState === 'recap') {
                 clueTitle.classList.add('waiting');
                 const safeWinner = winner ? String(winner).trim() : '';
@@ -327,6 +367,9 @@
                     if (data.id === REQUEST_ID + '_persisted' && data.variables) {
                         parseVariables(data.variables);
                     }
+                    if (data.event === "goose_clue_msg") {
+                        createFloatingClue(data.message, data.color);
+                    }
                 };
 
                 ws.onclose = () => {
@@ -346,7 +389,38 @@
             }
         }
 
-        function requestGlobals() {
+
+      function createFloatingClue(word, color) {
+        const container = document.getElementById('floatingCluesContainer');
+        if (!container) return;
+
+        const clueEl = document.createElement('div');
+        clueEl.className = 'floating-clue';
+        clueEl.textContent = word;
+        clueEl.style.color = color || '#ffffff';
+
+        // Start random position (avoid edges completely)
+        const startX = Math.random() * 60 + 20; // 20% to 80%
+        const startY = Math.random() * 60 + 20; // 20% to 80%
+        clueEl.style.left = startX + '%';
+        clueEl.style.top = startY + '%';
+
+        // Drift distance
+        const xDrift = (Math.random() - 0.5) * 150 + 'px';
+        const yDrift = (Math.random() - 0.5) * 150 - 50 + 'px';
+        clueEl.style.setProperty('--x-drift', xDrift);
+        clueEl.style.setProperty('--y-drift', yDrift);
+
+        container.appendChild(clueEl);
+
+        setTimeout(() => {
+          if (clueEl.parentNode) {
+            clueEl.parentNode.removeChild(clueEl);
+          }
+        }, 12000);
+      }
+
+      function requestGlobals() {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ request: "GetGlobals", id: REQUEST_ID + '_persisted', persisted: true }));
             }

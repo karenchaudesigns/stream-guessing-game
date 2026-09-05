@@ -1,3 +1,4 @@
 {
-  "recapDurationSeconds": 60
+  "recapDurationSeconds": 60,
+  "clueFloatSpeedMultiplier": 1.5
 }

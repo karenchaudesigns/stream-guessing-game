@@ -52,38 +52,21 @@
         width: 100%;
         height: 100%;
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         padding: 20px;
         box-sizing: border-box;
         pointer-events: none;
       }
 
-      .left-panel {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        pointer-events: auto;
-        width: 350px;
-      }
-
-      .center-panel {
+                  .right-panel {
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
         align-items: center;
-        flex-grow: 1;
-        padding-top: 50px;
         pointer-events: auto;
-        position: relative; /* For announcement box absolute positioning */
-      }
-
-      .right-panel {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: flex-end;
-        pointer-events: auto;
-        width: 250px; /* enough space for timer */
+        width: 33.33%;
+        height: 100%;
+        gap: 30px;
       }
 
       /* --- LEADERBOARD --- */
@@ -92,7 +75,9 @@
         background: rgba(24, 24, 27, 0.9); /* Same background color as Twitch dark mode */
         border: 4px solid var(--cyan);
         border-radius: 16px;
-        min-width: 300px;
+        width: 100%;
+        max-width: 600px;
+        margin-top: auto;
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
         display: flex;
         flex-direction: column;
@@ -208,7 +193,8 @@
         border: 12px solid #1a1a1a; /* iPad Bezel */
         border-radius: 24px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        width: 600px;
+        width: 100%;
+        max-width: 600px;
         min-height: 350px;
         display: flex;
         flex-direction: column;
@@ -587,30 +573,10 @@
   </head>
   <body>
     <div class="layout-container">
-      <!-- Left Panel: Leaderboard -->
-      <div class="left-panel">
-        <div class="leaderboard-widget">
-          <div class="header">
-            <h2>LEADERBOARD</h2>
-          </div>
-          <div class="list-container" id="leaderboard-list">
-            <div class="empty-state">Waiting for scores...</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Center Panel: Goose Clue Overlay -->
-      <div class="center-panel">
-        <div class="clue-widget" id="clueWidget">
-          <div class="sender-label" id="stylusLabel"></div>
-          <div class="clue-title" id="clueTitle"></div>
-          <div class="floating-clues-container" id="floatingCluesContainer"></div>
-          <div class="clue-text" id="clueDisplay"></div>
-        </div>
-      </div>
-
-      <!-- Right Panel: Timer -->
+      <!-- Right Panel: Combined Layout -->
       <div class="right-panel">
+
+        <!-- Timer (Top) -->
         <div class="timer-widget state-standard" id="timerWidget">
           <svg class="progress-ring" id="progressRing">
             <circle class="progress-ring__track" cx="104" cy="104" r="96"></circle>
@@ -625,6 +591,25 @@
           <div class="time-display" id="timeDisplay">00:00</div>
           <div class="secs-label" id="secsLabel">SECS</div>
         </div>
+
+        <!-- Goose Clue Overlay (Middle) -->
+        <div class="clue-widget" id="clueWidget">
+          <div class="sender-label" id="stylusLabel"></div>
+          <div class="clue-title" id="clueTitle"></div>
+          <div class="floating-clues-container" id="floatingCluesContainer"></div>
+          <div class="clue-text" id="clueDisplay"></div>
+        </div>
+
+        <!-- Leaderboard (Bottom) -->
+        <div class="leaderboard-widget">
+          <div class="header">
+            <h2>LEADERBOARD</h2>
+          </div>
+          <div class="list-container" id="leaderboard-list">
+            <div class="empty-state">Waiting for scores...</div>
+          </div>
+        </div>
+
       </div>
     </div>
 

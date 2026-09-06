@@ -86,7 +86,31 @@ public class CPHInline
             {
                 // Clue from the goose!
                 string escapedMsg = originalMessage.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", " ").Replace("\r", " ");
-                string cluePayload = $"{{\"event\":\"goose_clue_msg\",\"user\":\"{chatUser}\",\"color\":\"{userColor}\",\"message\":\"{escapedMsg}\"}}";
+
+                double clueSpeedMultiplier = 1.5; // default
+                try {
+                    string configPath = "config.json";
+                    if (System.IO.File.Exists(configPath)) {
+                        string configText = System.IO.File.ReadAllText(configPath);
+                        string searchString = "\"clueFloatSpeedMultiplier\"";
+                        int idx = configText.IndexOf(searchString);
+                        if (idx != -1) {
+                            int colonIdx = configText.IndexOf(':', idx + searchString.Length);
+                            if (colonIdx != -1) {
+                                int endIdx = configText.IndexOfAny(new char[] { ',', '}', '\n', '\r' }, colonIdx + 1);
+                                if (endIdx == -1) endIdx = configText.Length;
+                                string valString = configText.Substring(colonIdx + 1, endIdx - (colonIdx + 1)).Trim();
+                                if (double.TryParse(valString, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double parsedVal)) {
+                                    clueSpeedMultiplier = parsedVal;
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    CPH.LogInfo("Config Read Error (Speed): " + ex.Message);
+                }
+
+                string cluePayload = $"{{\"event\":\"goose_clue_msg\",\"user\":\"{chatUser}\",\"color\":\"{userColor}\",\"message\":\"{escapedMsg}\",\"speed\":{clueSpeedMultiplier.ToString(System.Globalization.CultureInfo.InvariantCulture)}}}";
                 CPH.WebsocketBroadcastString(cluePayload);
             }
             return true;

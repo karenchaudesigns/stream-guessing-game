@@ -74,6 +74,15 @@
             z-index: 10;
         }
 
+        .goose-avatar {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: none;
+            vertical-align: middle;
+        }
+
         .clue-title {
             background: rgba(17, 94, 89, 0.95); /* Deep Teal for Inactive */
             color: #ffffff; /* White text for Inactive */
@@ -163,36 +172,28 @@
 
       .floating-clue {
         position: absolute;
-        color: #ffffff;
+        color: #000000 !important;
         font-size: 2.2rem;
         font-weight: 900;
-        text-shadow:
-          2px 2px 0 #000,
-          -1px -1px 0 #000,
-          0 -1px 0 #000,
-          1px -1px 0 #000,
-          -1px 1px 0 #000,
-          1px 1px 0 #000;
         pointer-events: none;
         white-space: pre-wrap;
         max-width: 80%;
         text-align: center;
-        opacity: 0;
-        animation: floatDrift 12s linear forwards;
-      }
-
-      @keyframes floatDrift {
-        0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
-        10% { opacity: 1; transform: translate(calc(var(--x-drift) * 0.1), calc(var(--y-drift) * 0.1)) scale(1); }
-        90% { opacity: 1; transform: translate(calc(var(--x-drift) * 0.9), calc(var(--y-drift) * 0.9)) scale(1); }
-        100% { opacity: 0; transform: translate(var(--x-drift), var(--y-drift)) scale(1.1); }
+        opacity: 1;
+        left: 50%;
+        top: 50%;
+        transform-origin: center center;
+        /* No transition, we will animate with requestAnimationFrame */
       }
 </style>
 </head>
 <body>
 
     <div class="clue-widget" id="clueWidget">
-        <div class="sender-label" id="stylusLabel"></div>
+        <div class="sender-label">
+            <img class="goose-avatar" id="gooseAvatarStylus" src="" alt="">
+            <span id="stylusLabel"></span>
+        </div>
         <div class="clue-title" id="clueTitle"></div>
           <div class="floating-clues-container" id="floatingCluesContainer"></div>
         <div class="clue-text" id="clueDisplay"></div>
@@ -292,6 +293,7 @@
         const clueWidget = document.getElementById('clueWidget');
         const clueTitle = document.getElementById('clueTitle');
         const stylusLabel = document.getElementById('stylusLabel');
+        const gooseAvatarStylus = document.getElementById('gooseAvatarStylus');
         const clueDisplay = document.getElementById('clueDisplay');
         const connStatus = document.getElementById('connection-status');
 
@@ -304,12 +306,14 @@
             if (safeState === 'inactive') {
                 clueTitle.innerHTML = `Mods: Start game with <span style="color: var(--yellow);">!giveword @user</span>`;
                 stylusLabel.innerHTML = ''; // Blank stylus text when inactive, but pencil remains docked
+                gooseAvatarStylus.style.display = 'none';
                 clueDisplay.innerHTML = ''; // Interior of iPad remains fully transparent
 
             } else if (safeState === 'waiting') {
                 clueTitle.classList.add('waiting');
                 clueTitle.innerHTML = `Waiting for ${safeGuest}<br>to lock in a secret word...`;
                 stylusLabel.innerHTML = '';
+                gooseAvatarStylus.style.display = 'none';
                 clueDisplay.innerHTML = '';
 
             } else if (safeState === 'active') {
@@ -346,6 +350,20 @@
                 clueTitle.innerHTML = titleHtml;
                 stylusLabel.innerHTML = `Clues were from&nbsp;<span style="color: var(--orange);">${safeGuest}</span>`;
                 clueDisplay.innerHTML = clue ? clue : '';
+            }
+
+            if ((safeState === "active" || safeState === "recap") && safeGuest) {
+                fetch('https://decapi.me/twitch/avatar/' + safeGuest)
+                    .then(r => r.text())
+                    .then(url => {
+                        if (url && url.startsWith('http')) {
+                            gooseAvatarStylus.src = url;
+                            gooseAvatarStylus.style.display = "inline-block";
+                        }
+                    })
+                    .catch(err => console.error("Error fetching goose avatar", err));
+            } else {
+                gooseAvatarStylus.style.display = "none";
             }
         }
 
@@ -390,34 +408,83 @@
         }
 
 
-      function createFloatingClue(word, color) {
+      let activeClues = [];
+      let animationFrameId = null;
+
+      function animateClues() {
+        const container = document.getElementById('floatingCluesContainer');
+        if (!container) return;
+
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        for (let idx = 0; idx < activeClues.length; idx++) {
+          const clue = activeClues[idx];
+
+          // Update position
+          clue.x += clue.vx;
+          clue.y += clue.vy;
+
+          // Check boundaries and bounce
+          // Calculate max offset from center based on container dims (roughly half width/height)
+          const maxOffsetX = containerWidth / 2 - 50; // 50px buffer for clue width
+          const maxOffsetY = containerHeight / 2 - 30; // 30px buffer for clue height
+
+          if (clue.x > maxOffsetX) { clue.x = maxOffsetX; clue.vx *= -1; }
+          else if (clue.x < -maxOffsetX) { clue.x = -maxOffsetX; clue.vx *= -1; }
+
+          if (clue.y > maxOffsetY) { clue.y = maxOffsetY; clue.vy *= -1; }
+          else if (clue.y < -maxOffsetY) { clue.y = -maxOffsetY; clue.vy *= -1; }
+
+          // Apply scale based on index (newest is index 0 for math)
+          const i = activeClues.length - 1 - idx;
+          const scale = Math.max(0.3, 1 - (i * 0.15));
+
+          clue.element.style.transform = `translate(calc(-50% + ${clue.x}px), calc(-50% + ${clue.y}px)) scale(${scale})`;
+        }
+
+        animationFrameId = requestAnimationFrame(animateClues);
+      }
+
+      function createFloatingClue(word, color, speed) {
         const container = document.getElementById('floatingCluesContainer');
         if (!container) return;
 
         const clueEl = document.createElement('div');
         clueEl.className = 'floating-clue';
         clueEl.textContent = word;
-        clueEl.style.color = color || '#ffffff';
-
-        // Start random position (avoid edges completely)
-        const startX = Math.random() * 60 + 20; // 20% to 80%
-        const startY = Math.random() * 60 + 20; // 20% to 80%
-        clueEl.style.left = startX + '%';
-        clueEl.style.top = startY + '%';
-
-        // Drift distance
-        const xDrift = (Math.random() - 0.5) * 150 + 'px';
-        const yDrift = (Math.random() - 0.5) * 150 - 50 + 'px';
-        clueEl.style.setProperty('--x-drift', xDrift);
-        clueEl.style.setProperty('--y-drift', yDrift);
 
         container.appendChild(clueEl);
+
+        const startAngle = Math.random() * Math.PI * 2;
+        const speedMultiplier = (speed !== undefined) ? speed : 1.5;
+
+        const clueObj = {
+          element: clueEl,
+          timestamp: Date.now(),
+          x: 0,
+          y: 0,
+          vx: Math.cos(startAngle) * speedMultiplier,
+          vy: Math.sin(startAngle) * speedMultiplier
+        };
+        activeClues.push(clueObj);
+
+        if (!animationFrameId) {
+          animationFrameId = requestAnimationFrame(animateClues);
+        }
+
+        const duration = 12000;
 
         setTimeout(() => {
           if (clueEl.parentNode) {
             clueEl.parentNode.removeChild(clueEl);
           }
-        }, 12000);
+          activeClues = activeClues.filter(c => c !== clueObj);
+          if (activeClues.length === 0 && animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+          }
+        }, duration);
       }
 
       function requestGlobals() {

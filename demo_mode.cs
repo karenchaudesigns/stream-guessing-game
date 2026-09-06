@@ -20,7 +20,7 @@ public class CPHInline
 
             // 2. Waiting
             CPH.SetGlobalVar("guessing-game_state", "waiting", true);
-            CPH.SetGlobalVar("guessing-game_currentGuest", "DemoGoose", true);
+            CPH.SetGlobalVar("guessing-game_currentGuest", "twitch", true);
             CPH.WebsocketBroadcastString("{\"event\":\"state_change\",\"state\":\"waiting\"}");
             CPH.SendMessage("Demo: State is WAITING");
 
@@ -34,11 +34,16 @@ public class CPHInline
             CPH.WebsocketBroadcastString("{\"event\":{\"source\":\"General\",\"type\":\"Custom\"},\"data\":{\"name\":\"GameStart\",\"arguments\":{}}}");
             CPH.SendMessage("Demo: State is ACTIVE");
 
-            await Task.Delay(10000);
+            string[] demoClues = { "First demo clue!", "Second demo clue!", "Third demo clue!" };
+            foreach(string clue in demoClues) {
+                await Task.Delay(2500);
+                CPH.WebsocketBroadcastString($"{{\"event\":\"goose_clue_msg\",\"user\":\"twitch\",\"color\":\"#000000\",\"message\":\"{clue}\",\"speed\":1.5}}");
+            }
+            await Task.Delay(2500);
 
             // 4. Recap
             CPH.SetGlobalVar("guessing-game_state", "recap", true);
-            CPH.SetGlobalVar("guessing-game_winner", "DemoWinner", true);
+            CPH.SetGlobalVar("guessing-game_winner", "ninja", true);
             CPH.SetGlobalVar("guessing-game_winningWord", "DEMOWORD", true);
             CPH.SetGlobalVar("guessing-game_timerStatus", "stopped", true);
             CPH.WebsocketBroadcastString("{\"event\":\"state_change\",\"state\":\"recap\"}");

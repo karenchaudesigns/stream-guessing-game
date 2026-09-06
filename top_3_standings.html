@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top 3 Standings</title>
+    <style>
+        :root {
+            --cyan-light: #ecfeff;
+            --cyan: #06b6d4;
+            --teal-bright: #2dd4bf;
+            --teal-dark: #115e59;
+            --yellow: #facc15;
+            --orange: #ea580c;
+        }
+
+        body {
+            background-color: transparent;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--cyan-light);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .podium-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .podium-spot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .podium-spot.first {
+            order: 2;
+            z-index: 3;
+            transform: translateY(-30px);
+        }
+
+        .podium-spot.second {
+            order: 1;
+            z-index: 2;
+        }
+
+        .podium-spot.third {
+            order: 3;
+            z-index: 1;
+        }
+
+        .avatar-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .avatar {
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid var(--cyan);
+            background-color: rgba(0, 0, 0, 0.5);
+            display: block;
+        }
+
+        .first .avatar {
+            width: 140px;
+            height: 140px;
+            border-color: #ffd700; /* Gold */
+        }
+
+        .second .avatar {
+            width: 100px;
+            height: 100px;
+            border-color: #c0c0c0; /* Silver */
+        }
+
+        .third .avatar {
+            width: 100px;
+            height: 100px;
+            border-color: #cd7f32; /* Bronze */
+        }
+
+        .ribbon {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 0.9rem;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            border: 2px solid rgba(0,0,0,0.2);
+        }
+
+        .first .ribbon {
+            background: linear-gradient(135deg, #ffd700, #b8860b);
+            font-size: 1.1rem;
+        }
+
+        .second .ribbon {
+            background: linear-gradient(135deg, #c0c0c0, #808080);
+        }
+
+        .third .ribbon {
+            background: linear-gradient(135deg, #cd7f32, #8b4513);
+        }
+
+        .username {
+            font-weight: 900;
+            font-size: 1.4rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .first .username {
+            font-size: 1.8rem;
+        }
+
+        .score {
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            color: #fff;
+            margin-top: 2px;
+        }
+
+        /* Hidden Simulation Panel - Hide in OBS with CSS */
+        #control-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--cyan-light);
+            padding: 15px;
+            border-radius: 10px;
+            color: #333;
+            font-size: 14px;
+            border: 2px solid var(--orange);
+            min-width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .sim-header {
+            font-weight: bold;
+            color: var(--teal-dark);
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        button {
+            background: var(--orange);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        button:hover {
+            background: var(--teal-bright);
+            color: var(--teal-dark);
+        }
+
+        #connection-status {
+            font-size: 0.8rem;
+            text-align: center;
+            font-weight: bold;
+        }
+        .connected { color: var(--teal-dark); }
+        .disconnected { color: #f24343; }
+    </style>
+</head>
+<body>
+
+    <div class="podium-container" id="podium-container" style="display: none;">
+        <!-- 2nd Place -->
+        <div class="podium-spot second" id="spot-2" style="display: none;">
+            <div class="avatar-container">
+                <img class="avatar" src="" alt="2nd Place">
+                <div class="ribbon">2nd Place</div>
+            </div>
+            <div class="username" id="user-2"></div>
+            <div class="score" id="score-2"></div>
+        </div>
+
+        <!-- 1st Place -->
+        <div class="podium-spot first" id="spot-1" style="display: none;">
+            <div class="avatar-container">
+                <img class="avatar" src="" alt="1st Place">
+                <div class="ribbon">1st Place</div>
+            </div>
+            <div class="username" id="user-1"></div>
+            <div class="score" id="score-1"></div>
+        </div>
+
+        <!-- 3rd Place -->
+        <div class="podium-spot third" id="spot-3" style="display: none;">
+            <div class="avatar-container">
+                <img class="avatar" src="" alt="3rd Place">
+                <div class="ribbon">3rd Place</div>
+            </div>
+            <div class="username" id="user-3"></div>
+            <div class="score" id="score-3"></div>
+        </div>
+    </div>
+
+    <!-- Simulation Panel for Browser Testing -->
+    <div id="control-panel">
+        <div class="sim-header">Simulation Panel</div>
+        <div id="connection-status" class="disconnected">WS Disconnected</div>
+        <button onclick="startMockPreview()">Simulate Live Data</button>
+        <div style="font-size: 0.7rem; text-align: center; opacity: 0.8; margin-top: 5px;">
+            Hide in OBS Custom CSS: <br> <code>#control-panel { display: none !important; }</code>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const WS_URL = 'ws://127.0.0.1:8080/';
+        const POLL_INTERVAL_MS = 2000;
+        const REQUEST_ID = 'guessing_game_top3_poll';
+        const VAR_SCORES = 'guessing-game_leaderboard';
+        // ---------------------
+
+        let ws;
+        let pollInterval;
+        let currentScoresString = "";
+        let mockIntervalActive = false;
+
+        const podiumContainer = document.getElementById('podium-container');
+        const connStatus = document.getElementById('connection-status');
+
+        function connect() {
+            try {
+                ws = new WebSocket(WS_URL);
+
+                ws.onopen = () => {
+                    connStatus.textContent = 'Connected to Streamer.bot';
+                    connStatus.className = 'connected';
+                    requestGlobals();
+                    pollInterval = setInterval(requestGlobals, POLL_INTERVAL_MS);
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+
+                    if (data.id === REQUEST_ID + '_persisted' && data.variables) {
+                        processScores(data.variables);
+                    }
+                };
+
+                ws.onclose = () => {
+                    connStatus.textContent = 'Disconnected';
+                    connStatus.className = 'disconnected';
+                    clearInterval(pollInterval);
+                    if (!mockIntervalActive) {
+                        setTimeout(connect, 5000);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    ws.close();
+                };
+            } catch (error) {
+                console.warn("WebSocket creation failed.");
+            }
+        }
+
+        function requestGlobals() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ request: "GetGlobals", id: REQUEST_ID + '_persisted', persisted: true }));
+            }
+        }
+
+        function processScores(variablesObj) {
+            if (!variablesObj[VAR_SCORES] || variablesObj[VAR_SCORES].value == null) return;
+
+            const rawValue = variablesObj[VAR_SCORES].value;
+            const stringifiedValue = typeof rawValue === 'object' ? JSON.stringify(rawValue) : String(rawValue);
+
+            if (stringifiedValue === currentScoresString) return;
+            currentScoresString = stringifiedValue;
+
+            let parsedData = {};
+            try {
+                if (typeof rawValue === 'object') {
+                    parsedData = rawValue;
+                } else {
+                    parsedData = JSON.parse(rawValue);
+                    if (typeof parsedData === 'string') parsedData = JSON.parse(parsedData);
+                }
+            } catch (e) {
+                console.error("Failed to parse scores JSON:", e);
+                return;
+            }
+
+            let scoresArray = [];
+            if (Array.isArray(parsedData)) {
+                scoresArray = parsedData.map(item => ({ username: item.username, score: parseInt(item.score) || 0, color: item.color }));
+            } else {
+                for (const [user, score] of Object.entries(parsedData)) {
+                    scoresArray.push({ username: user, score: parseInt(score) || 0 });
+                }
+            }
+
+            scoresArray.sort((a, b) => b.score - a.score);
+            renderTop3(scoresArray);
+        }
+
+        function updateSpot(rank, player) {
+            const spot = document.getElementById(`spot-${rank}`);
+            if (!player) {
+                spot.style.display = 'none';
+                return;
+            }
+
+            spot.style.display = 'flex';
+
+            const userEl = document.getElementById(`user-${rank}`);
+            const scoreEl = document.getElementById(`score-${rank}`);
+            const avatarEl = spot.querySelector('.avatar');
+
+            // Username text and color
+            userEl.textContent = player.username;
+            if (player.color) {
+                userEl.style.color = player.color;
+            } else {
+                userEl.style.color = '#ffffff'; // Fallback
+            }
+
+            scoreEl.textContent = `${player.score} pts`;
+
+            // Fetch avatar
+            fetch(`https://decapi.me/twitch/avatar/${player.username}`)
+                .then(res => res.text())
+                .then(url => {
+                    if (url && url.startsWith("http")) {
+                        avatarEl.src = url;
+                    } else {
+                        avatarEl.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+                    }
+                })
+                .catch(err => console.error("Error fetching avatar:", err));
+        }
+
+        function renderTop3(scoresArray) {
+            if (scoresArray.length === 0) {
+                podiumContainer.style.display = 'none';
+                return;
+            }
+
+            podiumContainer.style.display = 'flex';
+
+            updateSpot(1, scoresArray[0]);
+            updateSpot(2, scoresArray[1]);
+            updateSpot(3, scoresArray[2]);
+        }
+
+        function startMockPreview() {
+            if (mockIntervalActive) return;
+            mockIntervalActive = true;
+
+            connStatus.textContent = 'Simulation Mode Active';
+            connStatus.className = 'connected';
+
+            if (ws) { ws.onclose = null; ws.close(); }
+
+            let mockScores = [
+                { username: "MegaDuck", score: 1250, color: "#ff5555" },
+                { username: "GooseMaster", score: 980, color: "#55ff55" },
+                { username: "QuackAttaque", score: 850, color: "#5555ff" },
+            ];
+
+            let variablesObj = {};
+            variablesObj[VAR_SCORES] = { value: JSON.stringify(mockScores) };
+            processScores(variablesObj);
+        }
+
+        connect();
+    </script>
+</body>
+</html>

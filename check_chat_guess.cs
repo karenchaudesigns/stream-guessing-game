@@ -155,12 +155,6 @@ public class CPHInline
                     // Send success message to chat
                     CPH.SendMessage($"🏆 @{chatUser} GOT IT! The word was {secretWord}! 🏆");
 
-                    // Format a JSON message to broadcast to our OBS HTML overlay
-                    int pointsAwarded = 10;
-                    int currentPoints = CPH.GetTwitchUserVar<int>(chatUser, "guessing-game_score", true);
-                    int newPoints = currentPoints + pointsAwarded;
-                    CPH.SetTwitchUserVar(chatUser, "guessing-game_score", newPoints, true);
-
                     // Update leaderboard global variable
                     string leaderboardData = CPH.GetGlobalVar<string>("guessing-game_leaderboard_data", true);
                     var scores = new System.Collections.Generic.Dictionary<string, int>();
@@ -181,6 +175,12 @@ public class CPHInline
                             }
                         }
                     }
+
+                    // Format a JSON message to broadcast to our OBS HTML overlay
+                    int pointsAwarded = 10;
+                    int currentPoints = scores.ContainsKey(chatUser) ? scores[chatUser] : 0;
+                    int newPoints = currentPoints + pointsAwarded;
+                    CPH.SetTwitchUserVar(chatUser, "guessing-game_score", newPoints, true);
 
                     scores[chatUser] = newPoints;
                     colors[chatUser] = userColor;

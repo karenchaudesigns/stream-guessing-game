@@ -1,8 +1,11 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 
 public class CPHInline
 {
+    private static readonly Random rnd = new Random();
+
     public bool Execute()
     {
         // 1. Get the Goose's username from your command (e.g., !giveword goosename)
@@ -19,22 +22,34 @@ public class CPHInline
             // 2. Fetch words from the local words.txt file (or custom path)
             CPH.TryGetArg("wordsFilePath", out string customPath);
             string wordsFilePath = string.IsNullOrEmpty(customPath) ? "words.txt" : customPath;
-            string[] allWords = File.ReadAllLines(wordsFilePath);
 
-            if(allWords.Length >= 3)
+            string absolutePath = Path.GetFullPath(wordsFilePath);
+            CPH.LogInfo($"[Guessing Game] Loading words from: {absolutePath}");
+
+            string[] rawWords = File.ReadAllLines(wordsFilePath);
+
+            var validWordsList = new List<string>();
+            foreach(string w in rawWords) {
+                if (!string.IsNullOrWhiteSpace(w)) {
+                    validWordsList.Add(w.Trim().ToUpper());
+                }
+            }
+
+            CPH.LogInfo($"[Guessing Game] Successfully loaded {validWordsList.Count} valid words.");
+
+            if(validWordsList.Count >= 3)
             {
                 // Select 3 random distinct words
-                Random rnd = new Random();
                 string[] words = new string[3];
                 for (int i = 0; i < 3; i++)
                 {
-                    int index = rnd.Next(allWords.Length);
-                    words[i] = allWords[index].Trim().ToUpper();
+                    int index = rnd.Next(validWordsList.Count);
+                    words[i] = validWordsList[index];
                     // Basic safeguard to avoid duplicates (could be optimized, but fine for n=3)
                     while (i > 0 && Array.IndexOf(words, words[i], 0, i) != -1)
                     {
-                        index = rnd.Next(allWords.Length);
-                        words[i] = allWords[index].Trim().ToUpper();
+                        index = rnd.Next(validWordsList.Count);
+                        words[i] = validWordsList[index];
                     }
                 }
 

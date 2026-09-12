@@ -1,4 +1,6 @@
 {
   "recapDurationSeconds": 60,
-  "clueFloatSpeedMultiplier": 1.5
+  "clueFloatSpeedMultiplier": 1.5,
+  "leaderboardScrollSpeedMultiplier": 1.0,
+  "leaderboardScrollGapPx": 50
 }

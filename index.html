@@ -883,9 +883,14 @@
         }
       }
 
+
       // --- LEADERBOARD LOGIC ---
       let autoScrollFrame;
       let lastScrollTime = 0;
+      let configLeaderboardScrollSpeedMultiplier = 1.0;
+      let configLeaderboardScrollGapPx = 50;
+      let leaderboardOriginalHeight = 0;
+
 
       function startLeaderboardScroll() {
         const container = document.getElementById("leaderboard-list");
@@ -895,34 +900,19 @@
         container.scrollTop = 0;
 
         let scrollPos = 0;
-        let phase = "pause-top";
-        let phaseTime = Date.now();
 
         function step() {
           const now = Date.now();
+          if (lastScrollTime === 0) lastScrollTime = now;
           const dt = now - lastScrollTime;
 
-          if (container.scrollHeight > container.clientHeight) {
-            if (phase === "pause-top") {
-              if (now - phaseTime > 2000) {
-                phase = "scrolling";
-              }
-            } else if (phase === "scrolling") {
-              scrollPos += 0.05 * dt;
-              container.scrollTop = scrollPos;
+          if (leaderboardOriginalHeight > container.clientHeight) {
+              scrollPos += 0.05 * configLeaderboardScrollSpeedMultiplier * dt;
 
-              if (scrollPos >= container.scrollHeight - container.clientHeight) {
-                phase = "pause-bottom";
-                phaseTime = now;
+              if (scrollPos >= leaderboardOriginalHeight + configLeaderboardScrollGapPx) {
+                  scrollPos = scrollPos % (leaderboardOriginalHeight + configLeaderboardScrollGapPx);
               }
-            } else if (phase === "pause-bottom") {
-              if (now - phaseTime > 2000) {
-                scrollPos = 0;
-                container.scrollTop = 0;
-                phase = "pause-top";
-                phaseTime = now;
-              }
-            }
+              container.scrollTop = scrollPos;
           } else {
             scrollPos = 0;
             container.scrollTop = 0;
@@ -945,6 +935,10 @@
           return;
         }
 
+        // Create original wrapper
+        const originalWrapper = document.createElement("div");
+        originalWrapper.className = "leaderboard-wrapper-original";
+
         scoresArray.forEach((player, index) => {
           const rank = index + 1;
           const row = document.createElement("div");
@@ -964,7 +958,7 @@
                     <div class="score-value">${player.score}</div>
                 `;
 
-          lbListContainer.appendChild(row);
+          originalWrapper.appendChild(row);
 
           // Fetch avatar
           fetch(`https://decapi.me/twitch/avatar/${player.user}`)
@@ -976,10 +970,35 @@
                   img.src = url;
                   img.style.display = "inline-block";
                 }
+
+                // Also update the clone if it exists
+                const clones = document.querySelectorAll(".leaderboard-wrapper-clone .score-row");
+                if (clones && clones[index]) {
+                    const cloneImg = clones[index].querySelector(".avatar");
+                    if (cloneImg) {
+                        cloneImg.src = url;
+                        cloneImg.style.display = "inline-block";
+                    }
+                }
               }
             })
             .catch((err) => console.error("Error fetching avatar:", err));
         });
+
+        lbListContainer.appendChild(originalWrapper);
+        leaderboardOriginalHeight = originalWrapper.scrollHeight;
+
+        // If it fits within the container, no need to duplicate or scroll
+        if (leaderboardOriginalHeight > lbListContainer.clientHeight) {
+            const gapDiv = document.createElement("div");
+            gapDiv.style.height = `${configLeaderboardScrollGapPx}px`;
+            gapDiv.style.flexShrink = "0";
+            lbListContainer.appendChild(gapDiv);
+
+            const cloneWrapper = originalWrapper.cloneNode(true);
+            cloneWrapper.className = "leaderboard-wrapper-clone";
+            lbListContainer.appendChild(cloneWrapper);
+        }
 
         startLeaderboardScroll();
       }
@@ -1153,7 +1172,18 @@
         return v;
       }
 
-      function processVariables(variablesObj) {
+            function processVariables(variablesObj) {
+        // Parse config variables
+        const speedVal = getVarValue(variablesObj["guessing-game_leaderboardScrollSpeedMultiplier"]);
+        if (speedVal != null) {
+            configLeaderboardScrollSpeedMultiplier = parseFloat(speedVal) || 1.0;
+        }
+
+        const gapVal = getVarValue(variablesObj["guessing-game_leaderboardScrollGapPx"]);
+        if (gapVal != null) {
+            configLeaderboardScrollGapPx = parseInt(gapVal) || 50;
+        }
+
         // 1. Process Leaderboard
         const scoresVal = getVarValue(variablesObj[VAR_SCORES]);
         if (scoresVal != null) {

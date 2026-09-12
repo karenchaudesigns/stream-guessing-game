@@ -82,6 +82,9 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        max-height: 250px;
+        flex: 1;
+        min-height: 0;
       }
 
       /* Header */
@@ -107,6 +110,8 @@
         flex-direction: column;
         gap: 6px;
         min-height: 80px;
+        overflow-y: hidden;
+        flex: 1;
       }
 
       /* Individual Rows */
@@ -121,6 +126,7 @@
         font-weight: 700;
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         transition: transform 0.2s ease;
+        flex-shrink: 0;
       }
 
       .username {
@@ -601,7 +607,7 @@
         <!-- Leaderboard (Bottom) -->
         <div class="leaderboard-widget">
           <div class="header">
-            <h2>LEADERBOARD</h2>
+            <h2>SCORES</h2>
           </div>
           <div class="list-container" id="leaderboard-list">
             <div class="empty-state">Waiting for scores...</div>
@@ -627,8 +633,6 @@
       const VAR_ANSWER = "guessing-game_winningWord";
       const VAR_TIMER_STATUS = "guessing-game_timerStatus";
       const VAR_TIMER_DURATION = "guessing-game_timerDuration";
-
-      const MAX_PLAYERS_TO_SHOW = 5;
 
       // State Tracking
       let currentScoresString = "";
@@ -880,6 +884,58 @@
       }
 
       // --- LEADERBOARD LOGIC ---
+      let autoScrollFrame;
+      let lastScrollTime = 0;
+
+      function startLeaderboardScroll() {
+        const container = document.getElementById("leaderboard-list");
+        if (!container) return;
+
+        if (autoScrollFrame) cancelAnimationFrame(autoScrollFrame);
+        container.scrollTop = 0;
+
+        let scrollPos = 0;
+        let phase = "pause-top";
+        let phaseTime = Date.now();
+
+        function step() {
+          const now = Date.now();
+          const dt = now - lastScrollTime;
+
+          if (container.scrollHeight > container.clientHeight) {
+            if (phase === "pause-top") {
+              if (now - phaseTime > 2000) {
+                phase = "scrolling";
+              }
+            } else if (phase === "scrolling") {
+              scrollPos += 0.05 * dt;
+              container.scrollTop = scrollPos;
+
+              if (scrollPos >= container.scrollHeight - container.clientHeight) {
+                phase = "pause-bottom";
+                phaseTime = now;
+              }
+            } else if (phase === "pause-bottom") {
+              if (now - phaseTime > 2000) {
+                scrollPos = 0;
+                container.scrollTop = 0;
+                phase = "pause-top";
+                phaseTime = now;
+              }
+            }
+          } else {
+            scrollPos = 0;
+            container.scrollTop = 0;
+          }
+
+          lastScrollTime = now;
+          autoScrollFrame = requestAnimationFrame(step);
+        }
+
+        lastScrollTime = Date.now();
+        autoScrollFrame = requestAnimationFrame(step);
+      }
+
       function renderLeaderboard(scoresArray) {
         lbListContainer.innerHTML = "";
 
@@ -889,9 +945,7 @@
           return;
         }
 
-        const topPlayers = scoresArray.slice(0, MAX_PLAYERS_TO_SHOW);
-
-        topPlayers.forEach((player, index) => {
+        scoresArray.forEach((player, index) => {
           const rank = index + 1;
           const row = document.createElement("div");
           row.className = `score-row`;
@@ -926,6 +980,8 @@
             })
             .catch((err) => console.error("Error fetching avatar:", err));
         });
+
+        startLeaderboardScroll();
       }
 
       // --- CLUE LOGIC ---

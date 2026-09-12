@@ -6,6 +6,49 @@ public class CPHInline
     public bool Execute()
     {
         // 1. Get the Goose's username from your command (e.g., !giveword goosename)
+
+        // 0. Load leaderboard configuration
+        double leaderboardScrollSpeedMultiplier = 1.0;
+        int leaderboardScrollGapPx = 50;
+        try {
+            string configPath = "config.json";
+            if (System.IO.File.Exists(configPath)) {
+                string configText = System.IO.File.ReadAllText(configPath);
+
+                string searchString = "\"leaderboardScrollSpeedMultiplier\"";
+                int idx = configText.IndexOf(searchString);
+                if (idx != -1) {
+                    int colonIdx = configText.IndexOf(':', idx + searchString.Length);
+                    if (colonIdx != -1) {
+                        int endIdx = configText.IndexOfAny(new char[] { ',', '}', '\n', '\r' }, colonIdx + 1);
+                        if (endIdx == -1) endIdx = configText.Length;
+                        string valString = configText.Substring(colonIdx + 1, endIdx - (colonIdx + 1)).Trim();
+                        if (double.TryParse(valString, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double parsedVal)) {
+                            leaderboardScrollSpeedMultiplier = parsedVal;
+                        }
+                    }
+                }
+
+                string searchStringGap = "\"leaderboardScrollGapPx\"";
+                int idxGap = configText.IndexOf(searchStringGap);
+                if (idxGap != -1) {
+                    int colonIdx = configText.IndexOf(':', idxGap + searchStringGap.Length);
+                    if (colonIdx != -1) {
+                        int endIdx = configText.IndexOfAny(new char[] { ',', '}', '\n', '\r' }, colonIdx + 1);
+                        if (endIdx == -1) endIdx = configText.Length;
+                        string valString = configText.Substring(colonIdx + 1, endIdx - (colonIdx + 1)).Trim();
+                        if (int.TryParse(valString, out int parsedVal)) {
+                            leaderboardScrollGapPx = parsedVal;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            CPH.LogInfo("Config Read Error (Leaderboard): " + ex.Message);
+        }
+
+        CPH.SetGlobalVar("guessing-game_leaderboardScrollSpeedMultiplier", leaderboardScrollSpeedMultiplier, true);
+        CPH.SetGlobalVar("guessing-game_leaderboardScrollGapPx", leaderboardScrollGapPx, true);
         CPH.TryGetArg("rawInput", out string rawInput);
         string guestUser = string.IsNullOrEmpty(rawInput) ? "" : rawInput.Trim().Replace("@", "").ToLower();
         

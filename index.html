@@ -1542,11 +1542,6 @@
           currentWinner = "";
           currentAnswer = "";
         } else if (newWinner !== currentWinner || newAnswer !== currentAnswer) {
-          if (newWinner !== currentWinner) {
-            if (newWinner !== "" && newWinner.toLowerCase() !== "time's up" && !newWinner.toLowerCase().includes("forfeited")) {
-              playSuccess();
-            }
-          }
           currentWinner = newWinner;
           currentAnswer = newAnswer;
         }
@@ -1588,6 +1583,10 @@
 
             if (msg.event === "goose_clue_msg") {
               createFloatingClue(msg.message, msg.color);
+            }
+
+            if (msg.event === "winner") {
+              playSuccess();
             }
 
             // Handle custom events (Timer)

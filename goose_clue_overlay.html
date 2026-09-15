@@ -388,6 +388,9 @@
                     if (data.event === "goose_clue_msg") {
                         createFloatingClue(data.message, data.color);
                     }
+                    if (data.event === "winner") {
+                        playSuccess();
+                    }
                 };
 
                 ws.onclose = () => {
@@ -503,9 +506,6 @@
             if (varsObj[VAR_ANSWER]) currentAnswer = varsObj[VAR_ANSWER].value;
 
             if (newWinner !== currentWinner) {
-                if (newWinner !== "" && newWinner.toLowerCase() !== "time's up" && !newWinner.toLowerCase().includes("forfeited")) {
-                    playSuccess();
-                }
                 currentWinner = newWinner;
             }
 

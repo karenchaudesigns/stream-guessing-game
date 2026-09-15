@@ -35,6 +35,7 @@ public class CPHInline
         // 5. Update state and broadcast
         CPH.SetGlobalVar("guessing-game_state", "active", true);
         CPH.SetGlobalVar("guessing-game_timerStatus", "running", true);
+        CPH.SetGlobalVar("guessing-game_wrong_guesses", "", true); // Reset wrong guesses count
 
         // 6. Confirm with the Goose & announce to stream
         CPH.SendWhisper(whisperSender, $"Locked in! Your word is: {lockedWord}. Start creating!", true);

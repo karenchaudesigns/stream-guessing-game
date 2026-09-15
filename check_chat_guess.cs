@@ -116,10 +116,45 @@ public class CPHInline
             return true;
         }
 
-        // 3. Only process as a guess if it's a single word
+                    // 3. Only process as a guess if it's a single word
         if (!originalMessage.Contains(" "))
 
         {
+            // Read config options for scoring and penalties
+            int pointsAwarded = 10;
+            int maxFreeGuesses = 3;
+            int penaltyPerWrongGuess = 1;
+
+            try {
+                string configPath = "config.json";
+                if (System.IO.File.Exists(configPath)) {
+                    string configText = System.IO.File.ReadAllText(configPath);
+
+                    int TryGetConfigInt(string text, string key, int defaultVal) {
+                        string searchString = "\"" + key + "\"";
+                        int idx = text.IndexOf(searchString);
+                        if (idx != -1) {
+                            int colonIdx = text.IndexOf(':', idx + searchString.Length);
+                            if (colonIdx != -1) {
+                                int endIdx = text.IndexOfAny(new char[] { ',', '}', '\n', '\r' }, colonIdx + 1);
+                                if (endIdx == -1) endIdx = text.Length;
+                                string valString = text.Substring(colonIdx + 1, endIdx - (colonIdx + 1)).Trim();
+                                if (int.TryParse(valString, out int parsedVal)) {
+                                    return parsedVal;
+                                }
+                            }
+                        }
+                        return defaultVal;
+                    }
+
+                    pointsAwarded = TryGetConfigInt(configText, "pointsAwarded", pointsAwarded);
+                    maxFreeGuesses = TryGetConfigInt(configText, "maxFreeGuesses", maxFreeGuesses);
+                    penaltyPerWrongGuess = TryGetConfigInt(configText, "penaltyPerWrongGuess", penaltyPerWrongGuess);
+                }
+            } catch (Exception ex) {
+                CPH.LogInfo("Config Read Error (Scoring): " + ex.Message);
+            }
+
             // Track participant for active game
             string participantsList = CPH.GetGlobalVar<string>("guessing-game_participants", true);
             if (string.IsNullOrEmpty(participantsList))
@@ -143,7 +178,81 @@ public class CPHInline
             CPH.WebsocketBroadcastString(guessPayload);
 
             // Check for a match
-            if (isCorrect)
+            if (!isCorrect)
+            {
+                string wrongGuessesData = CPH.GetGlobalVar<string>("guessing-game_wrong_guesses", true);
+                var userWrongGuesses = new System.Collections.Generic.Dictionary<string, int>();
+
+                if (!string.IsNullOrEmpty(wrongGuessesData))
+                {
+                    foreach (var entry in wrongGuessesData.Split(','))
+                    {
+                        var parts = entry.Split(':');
+                        if (parts.Length == 2 && int.TryParse(parts[1], out int count))
+                        {
+                            userWrongGuesses[parts[0]] = count;
+                        }
+                    }
+                }
+
+                int currentGuesses = userWrongGuesses.ContainsKey(chatUser) ? userWrongGuesses[chatUser] : 0;
+                currentGuesses++;
+                userWrongGuesses[chatUser] = currentGuesses;
+
+                var wrongDataParts = new System.Collections.Generic.List<string>();
+                foreach (var kvp in userWrongGuesses)
+                {
+                    wrongDataParts.Add($"{kvp.Key}:{kvp.Value}");
+                }
+                CPH.SetGlobalVar("guessing-game_wrong_guesses", string.Join(",", wrongDataParts), true);
+
+                if (currentGuesses > maxFreeGuesses && penaltyPerWrongGuess > 0)
+                {
+                    // Apply penalty
+                    string leaderboardData = CPH.GetGlobalVar<string>("guessing-game_leaderboard_data", true);
+                    var scores = new System.Collections.Generic.Dictionary<string, int>();
+                    var colors = new System.Collections.Generic.Dictionary<string, string>();
+
+                    if (!string.IsNullOrEmpty(leaderboardData))
+                    {
+                        foreach (var entry in leaderboardData.Split(','))
+                        {
+                            var parts = entry.Split(':');
+                            if (parts.Length >= 2 && int.TryParse(parts[1], out int score))
+                            {
+                                scores[parts[0]] = score;
+                                if (parts.Length >= 3)
+                                {
+                                    colors[parts[0]] = parts[2];
+                                }
+                            }
+                        }
+                    }
+
+                    int currentPoints = scores.ContainsKey(chatUser) ? scores[chatUser] : 0;
+                    int newPoints = currentPoints - penaltyPerWrongGuess;
+
+                    CPH.SetTwitchUserVar(chatUser, "guessing-game_score", newPoints, true);
+                    scores[chatUser] = newPoints;
+                    if (!colors.ContainsKey(chatUser)) colors[chatUser] = userColor;
+
+                    var sortedList = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, int>>(scores);
+                    sortedList.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+                    var dataParts = new System.Collections.Generic.List<string>();
+                    var jsonParts = new System.Collections.Generic.List<string>();
+                    foreach (var kvp in sortedList)
+                    {
+                        string entryColor = colors.ContainsKey(kvp.Key) ? colors[kvp.Key] : "#ffffff";
+                        dataParts.Add($"{kvp.Key}:{kvp.Value}:{entryColor}");
+                        jsonParts.Add($"{{\"username\":\"{kvp.Key}\",\"score\":{kvp.Value},\"color\":\"{entryColor}\"}}");
+                    }
+
+                    CPH.SetGlobalVar("guessing-game_leaderboard_data", string.Join(",", dataParts), true);
+                    CPH.SetGlobalVar("guessing-game_leaderboard", "[" + string.Join(",", jsonParts) + "]", true);
+                }
+            }
+            else
             {
                 // WE HAVE A WINNER (DUCK)!
                     CPH.SetGlobalVar("guessing-game_secretWord", "", true);
@@ -177,7 +286,6 @@ public class CPHInline
                     }
 
                     // Format a JSON message to broadcast to our OBS HTML overlay
-                    int pointsAwarded = 10;
                     int currentPoints = scores.ContainsKey(chatUser) ? scores[chatUser] : 0;
                     int newPoints = currentPoints + pointsAwarded;
                     CPH.SetTwitchUserVar(chatUser, "guessing-game_score", newPoints, true);

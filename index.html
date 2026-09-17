@@ -1217,15 +1217,22 @@
           lbListContainer.innerHTML =
             '<div class="empty-state">Let\'s play Duck Duck Guess!<br><br>For rules, type !ddgrules in chat.</div>';
 
-          // Optionally hide the header if empty
           const header = document.querySelector('.leaderboard-widget .header');
-          if (header) header.style.display = 'none';
+          if (header) {
+            header.style.display = '';
+            const h2 = header.querySelector('h2');
+            if (h2) h2.textContent = 'RULES';
+          }
 
           return;
         }
 
         const header = document.querySelector('.leaderboard-widget .header');
-        if (header) header.style.display = '';
+        if (header) {
+          header.style.display = '';
+          const h2 = header.querySelector('h2');
+          if (h2) h2.textContent = 'SCORES';
+        }
 
         // Create original wrapper
         const originalWrapper = document.createElement("div");

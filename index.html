@@ -737,6 +737,31 @@
         .connected { color: var(--teal-dark); }
         .disconnected { color: #f24343; }
 
+      /* Fullscreen Mode */
+      .layout-container.fullscreen-mode {
+        justify-content: center;
+        align-items: center;
+      }
+      .layout-container.fullscreen-mode .right-panel {
+        width: 100%;
+        max-width: 1200px;
+        justify-content: center;
+        gap: 50px;
+      }
+      .layout-container.fullscreen-mode .leaderboard-widget {
+        max-width: 800px;
+        max-height: 400px;
+      }
+      .layout-container.fullscreen-mode .clue-widget {
+        zoom: 1.5;
+      }
+      .layout-container.fullscreen-mode .timer-widget {
+        zoom: 1.5;
+      }
+      .layout-container.fullscreen-mode .podium-container {
+        zoom: 1.2;
+      }
+
 
 </style>
   </head>
@@ -867,6 +892,12 @@
           updateSpot(spot1, scoresArray[0]);
           updateSpot(spot2, scoresArray.length > 1 ? scoresArray[1] : null);
           updateSpot(spot3, scoresArray.length > 2 ? scoresArray[2] : null);
+      }
+
+      // Check for mode in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('mode') === 'fullscreen') {
+        document.querySelector('.layout-container').classList.add('fullscreen-mode');
       }
 
       // --- CONFIGURATION ---

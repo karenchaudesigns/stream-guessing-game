@@ -82,7 +82,6 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        max-height: 250px;
         flex: 1;
         min-height: 0;
       }
@@ -608,12 +607,12 @@
             z-index: 1;
         }
 
-        .avatar-container {
+        .podium-spot .avatar-container {
             position: relative;
             margin-bottom: 15px;
         }
 
-        .avatar {
+        .podium-spot .avatar {
             border-radius: 50%;
             object-fit: cover;
             border: 5px solid var(--cyan);
@@ -621,25 +620,25 @@
             display: block;
         }
 
-        .first .avatar {
+        .podium-spot.first .avatar {
             width: 140px;
             height: 140px;
             border-color: #ffd700; /* Gold */
         }
 
-        .second .avatar {
+        .podium-spot.second .avatar {
             width: 100px;
             height: 100px;
             border-color: #c0c0c0; /* Silver */
         }
 
-        .third .avatar {
+        .podium-spot.third .avatar {
             width: 100px;
             height: 100px;
             border-color: #cd7f32; /* Bronze */
         }
 
-        .ribbon {
+        .podium-spot .ribbon {
             position: absolute;
             bottom: -15px;
             left: 50%;
@@ -655,20 +654,20 @@
             border: 2px solid rgba(0,0,0,0.2);
         }
 
-        .first .ribbon {
+        .podium-spot.first .ribbon {
             background: linear-gradient(135deg, #ffd700, #b8860b);
             font-size: 1.1rem;
         }
 
-        .second .ribbon {
+        .podium-spot.second .ribbon {
             background: linear-gradient(135deg, #c0c0c0, #808080);
         }
 
-        .third .ribbon {
+        .podium-spot.third .ribbon {
             background: linear-gradient(135deg, #cd7f32, #8b4513);
         }
 
-        .username {
+        .podium-spot .username {
             font-weight: 900;
             font-size: 1.4rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
@@ -676,11 +675,11 @@
             margin-top: 5px;
         }
 
-        .first .username {
+        .podium-spot.first .username {
             font-size: 1.8rem;
         }
 
-        .score {
+        .podium-spot .score {
             font-size: 1.1rem;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
@@ -773,41 +772,41 @@
         </div>
 
 
-        <!-- Podium (Above Leaderboard) -->
-        <div class="podium-container" id="podium-container" style="display: none;">
-            <!-- 2nd Place -->
-            <div class="podium-spot second" id="spot-2" style="display: none;">
-                <div class="avatar-container">
-                    <img class="avatar" src="" alt="2nd Place">
-                    <div class="ribbon">2nd Place</div>
-                </div>
-                <div class="username" id="user-2"></div>
-                <div class="score" id="score-2"></div>
-            </div>
-
-            <!-- 1st Place -->
-            <div class="podium-spot first" id="spot-1" style="display: none;">
-                <div class="avatar-container">
-                    <img class="avatar" src="" alt="1st Place">
-                    <div class="ribbon">1st Place</div>
-                </div>
-                <div class="username" id="user-1"></div>
-                <div class="score" id="score-1"></div>
-            </div>
-
-            <!-- 3rd Place -->
-            <div class="podium-spot third" id="spot-3" style="display: none;">
-                <div class="avatar-container">
-                    <img class="avatar" src="" alt="3rd Place">
-                    <div class="ribbon">3rd Place</div>
-                </div>
-                <div class="username" id="user-3"></div>
-                <div class="score" id="score-3"></div>
-            </div>
-        </div>
-
         <!-- Leaderboard (Bottom) -->
         <div class="leaderboard-widget">
+          <!-- Podium (Above Leaderboard) -->
+          <div class="podium-container" id="podium-container" style="display: none;">
+              <!-- 2nd Place -->
+              <div class="podium-spot second" id="spot-2" style="display: none;">
+                  <div class="avatar-container">
+                      <img class="avatar" src="" alt="2nd Place">
+                      <div class="ribbon">2nd Place</div>
+                  </div>
+                  <div class="username" id="user-2"></div>
+                  <div class="score" id="score-2"></div>
+              </div>
+
+              <!-- 1st Place -->
+              <div class="podium-spot first" id="spot-1" style="display: none;">
+                  <div class="avatar-container">
+                      <img class="avatar" src="" alt="1st Place">
+                      <div class="ribbon">1st Place</div>
+                  </div>
+                  <div class="username" id="user-1"></div>
+                  <div class="score" id="score-1"></div>
+              </div>
+
+              <!-- 3rd Place -->
+              <div class="podium-spot third" id="spot-3" style="display: none;">
+                  <div class="avatar-container">
+                      <img class="avatar" src="" alt="3rd Place">
+                      <div class="ribbon">3rd Place</div>
+                  </div>
+                  <div class="username" id="user-3"></div>
+                  <div class="score" id="score-3"></div>
+              </div>
+          </div>
+
           <div class="header">
             <h2>SCORES</h2>
           </div>
@@ -1181,9 +1180,17 @@
 
         if (scoresArray.length === 0) {
           lbListContainer.innerHTML =
-            '<div class="empty-state">No scores yet!</div>';
+            '<div class="empty-state">Let\'s play Duck Duck Guess!<br><br>For rules, type !ddgrules in chat.</div>';
+
+          // Optionally hide the header if empty
+          const header = document.querySelector('.leaderboard-widget .header');
+          if (header) header.style.display = 'none';
+
           return;
         }
+
+        const header = document.querySelector('.leaderboard-widget .header');
+        if (header) header.style.display = '';
 
         // Create original wrapper
         const originalWrapper = document.createElement("div");

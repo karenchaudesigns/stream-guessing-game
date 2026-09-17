@@ -27,15 +27,18 @@
         }
 
         .clue-widget {
+            box-sizing: border-box;
             position: relative;
             background: transparent; /* Inside is fully transparent */
             border: 12px solid #1a1a1a; /* iPad Bezel */
             border-radius: 24px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             width: 600px;
-            min-height: 350px;
+            aspect-ratio: 600 / 350;
+            max-height: 350px;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
 
             /* Entrance Animation */
             animation: bounceIn 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
@@ -130,6 +133,7 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            min-height: 0;
         }
 
         #control-panel {

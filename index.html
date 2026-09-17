@@ -801,7 +801,7 @@
 
 
         <!-- Leaderboard (Bottom) -->
-        <div class="leaderboard-widget">
+        <div class="leaderboard-widget" id="leaderboardWidget">
           <!-- Podium (Above Leaderboard) -->
           <div class="podium-container" id="podium-container" style="display: none;">
               <!-- 2nd Place -->
@@ -1682,5 +1682,128 @@
       updateClueUI("inactive", "", "", "", "");
       connect();
     </script>
+
+    <script>
+      function enableWidgetInteraction() {
+        const widgets = ['timerWidget', 'clueWidget', 'leaderboardWidget'];
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentMode = urlParams.get('mode') || 'standard';
+
+        widgets.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+
+          // Add subtle visual cue when hovering over interactive elements
+          el.title = "Interact in OBS: Drag to move, Scroll to resize";
+          el.style.cursor = 'grab';
+
+          let isDragging = false;
+          let startX, startY, initialLeft, initialTop;
+
+          // Mouse Down -> Start Drag
+          el.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            el.style.cursor = 'grabbing';
+            startX = e.clientX;
+            startY = e.clientY;
+
+            const computedStyle = window.getComputedStyle(el);
+
+            // Switch to absolute positioning if not already
+            if (computedStyle.position !== 'absolute') {
+                const rect = el.getBoundingClientRect();
+                el.style.position = 'absolute';
+                // Adjust for zoom when getting initial client rect position
+                const currentZoom = parseFloat(computedStyle.zoom) || 1;
+                el.style.left = (rect.left / currentZoom) + 'px';
+                el.style.top = (rect.top / currentZoom) + 'px';
+                el.style.margin = '0';
+
+                initialLeft = rect.left / currentZoom;
+                initialTop = rect.top / currentZoom;
+            } else {
+                initialLeft = parseFloat(computedStyle.left) || 0;
+                initialTop = parseFloat(computedStyle.top) || 0;
+            }
+
+            // Bring to front
+            el.style.zIndex = 1000;
+            e.preventDefault(); // Prevent default text selection
+          });
+
+          // Mouse Move -> Dragging
+          window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const currentZoom = parseFloat(window.getComputedStyle(el).zoom) || 1;
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            el.style.left = (initialLeft + dx / currentZoom) + 'px';
+            el.style.top = (initialTop + dy / currentZoom) + 'px';
+          });
+
+          // Mouse Up -> End Drag & Save
+          window.addEventListener('mouseup', () => {
+            if (isDragging) {
+              isDragging = false;
+              el.style.cursor = 'grab';
+              el.style.zIndex = '';
+
+              // Save to localStorage using mode-specific keys
+              localStorage.setItem(`${id}_left_${currentMode}`, el.style.left);
+              localStorage.setItem(`${id}_top_${currentMode}`, el.style.top);
+              localStorage.setItem(`${id}_position_${currentMode}`, 'absolute');
+            }
+          });
+
+          // Mouse Wheel -> Resize (Zoom)
+          el.addEventListener('wheel', (e) => {
+            e.preventDefault(); // Prevent page scroll
+
+            let currentZoom = parseFloat(window.getComputedStyle(el).zoom) || 1;
+
+            // Determine scroll direction
+            if (e.deltaY < 0) {
+              currentZoom += 0.05; // Zoom in
+            } else {
+              currentZoom -= 0.05; // Zoom out
+            }
+
+            // Constrain zoom levels
+            currentZoom = Math.max(0.2, currentZoom);
+            currentZoom = Math.min(5.0, currentZoom);
+
+            el.style.zoom = currentZoom;
+
+            // Save zoom to localStorage
+            localStorage.setItem(`${id}_zoom_${currentMode}`, currentZoom);
+          });
+
+          // --- Restore State on Load ---
+          const savedLeft = localStorage.getItem(`${id}_left_${currentMode}`);
+          const savedTop = localStorage.getItem(`${id}_top_${currentMode}`);
+          const savedPos = localStorage.getItem(`${id}_position_${currentMode}`);
+          const savedZoom = localStorage.getItem(`${id}_zoom_${currentMode}`);
+
+          if (savedPos === 'absolute') {
+              el.style.position = 'absolute';
+              if (savedLeft) el.style.left = savedLeft;
+              if (savedTop) el.style.top = savedTop;
+              el.style.margin = '0';
+          }
+
+          if (savedZoom) {
+              el.style.zoom = savedZoom;
+          }
+        });
+      }
+
+      // Initialize interaction logic
+      document.addEventListener('DOMContentLoaded', enableWidgetInteraction);
+
+    </script>
   </body>
+
 </html>

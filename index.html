@@ -1279,9 +1279,38 @@
                         cloneImg.style.display = "inline-block";
                     }
                 }
+              } else {
+                const img = row.querySelector(".avatar");
+                if (img) {
+                  img.src = 'https://static-cdn.jtvnw.net/user-default-pictures-uv/41780b5a-def8-11e9-94d9-784f43822e80-profile_image-300x300.png';
+                  img.style.display = "inline-block";
+                }
+                const clones = document.querySelectorAll(".leaderboard-wrapper-clone .score-row");
+                if (clones && clones[index]) {
+                    const cloneImg = clones[index].querySelector(".avatar");
+                    if (cloneImg) {
+                        cloneImg.src = 'https://static-cdn.jtvnw.net/user-default-pictures-uv/41780b5a-def8-11e9-94d9-784f43822e80-profile_image-300x300.png';
+                        cloneImg.style.display = "inline-block";
+                    }
+                }
               }
             })
-            .catch((err) => console.error("Error fetching avatar:", err));
+            .catch((err) => {
+                console.error("Error fetching avatar:", err);
+                const img = row.querySelector(".avatar");
+                if (img) {
+                  img.src = 'https://static-cdn.jtvnw.net/user-default-pictures-uv/41780b5a-def8-11e9-94d9-784f43822e80-profile_image-300x300.png';
+                  img.style.display = "inline-block";
+                }
+                const clones = document.querySelectorAll(".leaderboard-wrapper-clone .score-row");
+                if (clones && clones[index]) {
+                    const cloneImg = clones[index].querySelector(".avatar");
+                    if (cloneImg) {
+                        cloneImg.src = 'https://static-cdn.jtvnw.net/user-default-pictures-uv/41780b5a-def8-11e9-94d9-784f43822e80-profile_image-300x300.png';
+                        cloneImg.style.display = "inline-block";
+                    }
+                }
+            });
         });
 
         lbListContainer.appendChild(originalWrapper);

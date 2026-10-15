@@ -1739,7 +1739,7 @@
           if (!el) return;
 
           // Add subtle visual cue when hovering over interactive elements
-          el.title = "Interact in OBS: Drag to move, Scroll to resize";
+          el.title = "Interact in OBS: Drag to move, Scroll to resize, Shift+Scroll to adjust width, Ctrl+Scroll to adjust height";
           el.style.cursor = 'grab';
 
           let isDragging = false;
@@ -1803,27 +1803,52 @@
             }
           });
 
-          // Mouse Wheel -> Resize (Zoom)
+          // Mouse Wheel -> Resize (Zoom, Width, Height)
           el.addEventListener('wheel', (e) => {
             e.preventDefault(); // Prevent page scroll
 
-            let currentZoom = parseFloat(window.getComputedStyle(el).zoom) || 1;
-
-            // Determine scroll direction
-            if (e.deltaY < 0) {
-              currentZoom += 0.05; // Zoom in
+            if (e.shiftKey) {
+              // Shift + Scroll -> Adjust Width
+              let currentWidth = el.offsetWidth;
+              if (e.deltaY < 0) {
+                currentWidth += 10; // Increase width
+              } else {
+                currentWidth -= 10; // Decrease width
+              }
+              currentWidth = Math.max(50, currentWidth); // Minimum width constraint
+              el.style.width = currentWidth + 'px';
+              localStorage.setItem(`${id}_width_${currentMode}`, currentWidth + 'px');
+            } else if (e.ctrlKey || e.metaKey) {
+              // Ctrl + Scroll -> Adjust Height
+              let currentHeight = el.offsetHeight;
+              if (e.deltaY < 0) {
+                currentHeight += 10; // Increase height
+              } else {
+                currentHeight -= 10; // Decrease height
+              }
+              currentHeight = Math.max(50, currentHeight); // Minimum height constraint
+              el.style.height = currentHeight + 'px';
+              localStorage.setItem(`${id}_height_${currentMode}`, currentHeight + 'px');
             } else {
-              currentZoom -= 0.05; // Zoom out
+              // Regular Scroll -> Adjust Zoom
+              let currentZoom = parseFloat(window.getComputedStyle(el).zoom) || 1;
+
+              // Determine scroll direction
+              if (e.deltaY < 0) {
+                currentZoom += 0.05; // Zoom in
+              } else {
+                currentZoom -= 0.05; // Zoom out
+              }
+
+              // Constrain zoom levels
+              currentZoom = Math.max(0.2, currentZoom);
+              currentZoom = Math.min(5.0, currentZoom);
+
+              el.style.zoom = currentZoom;
+
+              // Save zoom to localStorage
+              localStorage.setItem(`${id}_zoom_${currentMode}`, currentZoom);
             }
-
-            // Constrain zoom levels
-            currentZoom = Math.max(0.2, currentZoom);
-            currentZoom = Math.min(5.0, currentZoom);
-
-            el.style.zoom = currentZoom;
-
-            // Save zoom to localStorage
-            localStorage.setItem(`${id}_zoom_${currentMode}`, currentZoom);
           });
 
           // --- Restore State on Load ---
@@ -1831,6 +1856,8 @@
           const savedTop = localStorage.getItem(`${id}_top_${currentMode}`);
           const savedPos = localStorage.getItem(`${id}_position_${currentMode}`);
           const savedZoom = localStorage.getItem(`${id}_zoom_${currentMode}`);
+          const savedWidth = localStorage.getItem(`${id}_width_${currentMode}`);
+          const savedHeight = localStorage.getItem(`${id}_height_${currentMode}`);
 
           if (savedPos === 'absolute') {
               el.style.position = 'absolute';
@@ -1841,6 +1868,12 @@
 
           if (savedZoom) {
               el.style.zoom = savedZoom;
+          }
+          if (savedWidth) {
+              el.style.width = savedWidth;
+          }
+          if (savedHeight) {
+              el.style.height = savedHeight;
           }
         });
       }
